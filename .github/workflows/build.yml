@@ -45,25 +45,51 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: '8.13'
+
+      # Play Store upload key (repository secret UPLOAD_KEYSTORE_B64). Optional: without it
+      # the build still makes a debug APK, but no Play Store bundle.
+      - name: Restore upload key
+        id: key
+        env:
+          UPLOAD_KEYSTORE_B64: ${{ secrets.UPLOAD_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$UPLOAD_KEYSTORE_B64" ]; then
+            echo "$UPLOAD_KEYSTORE_B64" | tr -d ' \n\r' | base64 -d > "$RUNNER_TEMP/upload.jks"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::UPLOAD_KEYSTORE_B64 secret is not set - building a debug APK only (no Play Store bundle)."
+          fi
+
+      - name: Build signed APK and Play Store bundle
+        if: steps.key.outputs.signed == 'true'
+        run: |
+          gradle assembleRelease bundleRelease --no-daemon --stacktrace
+          cp build/outputs/apk/release/*.apk Gurbani.apk
+          cp build/outputs/bundle/release/*.aab Gurbani.aab
 
       - name: Build debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
-
-      - name: Rename APK
-        run: cp build/outputs/apk/debug/*.apk Gurbani.apk
+        if: steps.key.outputs.signed != 'true'
+        run: |
+          gradle assembleDebug --no-daemon --stacktrace
+          cp build/outputs/apk/debug/*.apk Gurbani.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: Gurbani-apk
-          path: Gurbani.apk
+          path: |
+            Gurbani.apk
+            Gurbani.aab
 
-      - name: Publish to Releases (direct APK download)
+      - name: Publish to Releases (direct download)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          FILES="Gurbani.apk"; [ -f Gurbani.aab ] && FILES="$FILES Gurbani.aab"
           gh release delete latest --cleanup-tag -y || true
-          gh release create latest Gurbani.apk \
-            --title "Gurbani APK" \
-            --notes "Build ${{ github.run_number }}" \
+          gh release create latest $FILES \
+            --title "Gurbani build ${{ github.run_number }}" \
+            --notes "Build ${{ github.run_number }} (version code ${{ github.run_number }}). Gurbani.apk installs directly on a phone; Gurbani.aab is the file to upload to Google Play Console." \
             --target "${{ github.sha }}"

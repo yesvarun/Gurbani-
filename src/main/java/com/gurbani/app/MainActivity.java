@@ -24,6 +24,9 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.speech.tts.Voice;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
@@ -33,6 +36,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.webkit.WebViewAssetLoader;
@@ -112,7 +116,27 @@ public class MainActivity extends Activity {
                 .build();
 
         web = new WebView(this);
-        setContentView(web);
+        // Newer Android draws apps behind the status and navigation bars. Keep the page clear of
+        // them by padding a maroon frame around the web view.
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(0xFF4B1515);
+        root.addView(web, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        setContentView(root);
+        root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                if (Build.VERSION.SDK_INT >= 30) {
+                    android.graphics.Insets i = insets.getInsets(WindowInsets.Type.systemBars()
+                            | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime());
+                    v.setPadding(i.left, i.top, i.right, i.bottom);
+                } else {
+                    v.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
+                            insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+                }
+                return insets;
+            }
+        });
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);

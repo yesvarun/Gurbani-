@@ -8,6 +8,7 @@ adb shell pm grant com.gurbani.app android.permission.RECORD_AUDIO
 adb logcat -c
 adb shell am start -n com.gurbani.app/.MainActivity --ez selftest true
 sleep 50
+adb exec-out screencap -p > /tmp/screen.png || true
 adb logcat -d > /tmp/logcat.txt
 echo "===== self-test lines"
 grep -E "GurbaniSelfTest" /tmp/logcat.txt | tail -40
