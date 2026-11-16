@@ -188,7 +188,7 @@
       </div>
     </div>
     <div id="setup" class="sub-row hidden">
-      <span class="tts-cap">Offline packs</span>
+      <span class="tts-cap">Download for offline use</span>
       <div id="setupOpts" class="opts"></div>
       <div id="setupNote" class="set-note"></div>
     </div>
@@ -435,16 +435,16 @@ async function initOffline(){
   dlBusy=true;
   try{
     const el=$("offline"); if(el){ el.classList.remove("hidden"); el.className="offline-badge"; el.textContent="Loading scripture…"; }
-    const lb=$("dlBtn"); if(lb){ lb.textContent="Loading scripture…"; lb.disabled=true; }
+    const lb=$("dlBtn"); if(lb){ lb.classList.add("hidden"); }
     const r=await fetch("corpus.json");
     if(r.ok){
       const c=await r.json();
       if(Array.isArray(c) && c.length>10000){ CORPUS=c; buildIndex(); setOfflineBadge("ready");
-        $("dlBtn").innerHTML="◆ Full scripture on device · "+c.length.toLocaleString()+" lines";
+        $("dlBtn").classList.add("hidden");
         dlBusy=false; return; }
     }
   }catch(e){}
-  dlBusy=false; setOfflineBadge("hide");
+  dlBusy=false; setOfflineBadge("hide"); $("dlBtn").classList.remove("hidden");
   try{
     const meta=await idbGet("meta");
     if(meta && meta.v===CORPUS_VER && meta.complete){
@@ -912,30 +912,20 @@ window.addEventListener("appinstalled", ()=> $("install").classList.add("hidden"
 const SETUP_LABEL={sr:"Punjabi listening", pa:"Punjabi voice", en:"English voice"};
 window.__gvSetup=function(st){
   const box=$("setup"), opts=$("setupOpts"), note=$("setupNote"); if(!box||!st) return;
-  opts.innerHTML=""; const notes=[];
+  opts.innerHTML=""; note.textContent="";
+  let shown=0;
   for(const k of ["sr","pa","en"]){
-    const v=st[k]; if(!v) continue;
+    if(st[k]!=="missing") continue;            // ready / not offered / unknown → nothing to show
     const b=document.createElement("button"); b.className="set-opt";
-    if(v==="ready"){ b.textContent="\u2713 "+SETUP_LABEL[k]; b.classList.add("ok"); b.disabled=true; }
-    else if(v==="unsupported"){
-      b.textContent="\u2715 "+SETUP_LABEL[k]; b.classList.add("no"); b.disabled=true;
-      notes.push(k==="sr" ? "This phone offers no Punjabi offline speech pack — listening will need internet."
-                          : SETUP_LABEL[k]+" is not offered by this phone's speech engine.");
-    }
-    else {
-      b.textContent="\u2B07 "+SETUP_LABEL[k];
-      b.addEventListener("click", ()=>{
-        try{ AndroidSetup.get(k); }catch(_){}
-        setTimeout(()=>{ try{ AndroidSetup.check(); }catch(_){} }, 8000);
-        setTimeout(()=>{ try{ AndroidSetup.check(); }catch(_){} }, 30000);
-      });
-      if(k==="sr" && v==="unknown") notes.push("Punjabi listening: tap to open speech settings, then add ਪੰਜਾਬੀ under offline speech recognition.");
-      else notes.push("Tap \u2B07 once while online to download "+SETUP_LABEL[k].toLowerCase()+".");
-    }
-    opts.appendChild(b);
+    b.textContent="\u2B07 "+SETUP_LABEL[k];
+    b.addEventListener("click", ()=>{
+      try{ AndroidSetup.get(k); }catch(_){}
+      setTimeout(()=>{ try{ AndroidSetup.check(); }catch(_){} }, 8000);
+      setTimeout(()=>{ try{ AndroidSetup.check(); }catch(_){} }, 30000);
+    });
+    opts.appendChild(b); shown++;
   }
-  note.textContent=notes.join(" ");
-  box.classList.remove("hidden");
+  box.classList.toggle("hidden", shown===0);
 };
 // APK: choose between the speech engine built into the app (offline) and the phone's Google recognizer.
 if(window.AndroidSpeech && AndroidSpeech.hasLocal && AndroidSpeech.hasLocal()){
