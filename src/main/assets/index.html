@@ -529,6 +529,16 @@ const ADV_MIN=3;         // a forward line must score at least this to win
 const ADV_MARGIN=3;      // …and beat the current line by at least this much before we move
 const setStatus = t => { const el=$("seekmsg"); if(el) el.textContent=t; };
 const showWarn  = h => { const w=$("warn"); w.innerHTML=h; w.classList.remove("hidden"); };
+// Warning with a one-tap download button (APK only; falls back to plain text elsewhere).
+function showWarnBtn(html, label, what){
+  showWarn(html);
+  if(!window.AndroidSetup) return;
+  const w=$("warn"), b=document.createElement("button");
+  b.className="set-opt"; b.style.marginTop="8px"; b.style.display="block"; b.style.marginLeft="auto"; b.style.marginRight="auto";
+  b.textContent=label;
+  b.addEventListener("click", ()=>{ try{ AndroidSetup.get(what); }catch(_){} });
+  w.appendChild(b);
+}
 
 /* ---------- Lyrics rendering ---------- */
 function renderShabad(){
@@ -808,11 +818,15 @@ function startRecog(){
     if(all.length){ $("heard").innerHTML="ਸੁਣ ਰਿਹਾ ਹੈ: <b>"+esc(all.slice(-12).join(" "))+"</b>"; onHeard(all); }
   };
   recog.onerror=e=>{
-    if(e.error==="not-allowed"||e.error==="service-not-allowed"){ showWarn("Microphone blocked. Allow mic access for this site, then tap ੴ again."); stopRecog(); }
+    if(e.error==="service-not-allowed" && window.AndroidSetup){
+      showWarnBtn("This phone has no Google speech engine, which listening needs.", "\u2B07 Install Google speech engine", "engine"); stopRecog();
+    }
+    else if(e.error==="not-allowed"||e.error==="service-not-allowed"){ showWarn("Microphone blocked. Allow mic access for this site, then tap ੴ again."); stopRecog(); }
     else if(e.error==="no-speech"){ /* will auto-restart */ }
     else if(e.error==="network"||e.error==="language-not-supported"){
       hardErr=true;
-      showWarn("Listening needs <b>internet</b>, or the <b>Punjabi offline speech pack</b> installed on this phone. Scripture itself is already offline.");
+      showWarnBtn("Listening needs <b>internet</b>, or Google's <b>Punjabi offline speech pack</b> on this phone. Scripture itself is already offline.",
+                  "\u2B07 Download Punjabi speech pack", "sr");
     }
     else { setStatus("Mic: "+e.error); }
   };

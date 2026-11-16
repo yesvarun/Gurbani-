@@ -1006,6 +1006,16 @@ public class MainActivity extends Activity {
     }
 
     private void runSetupGet(String what) {
+        if ("engine".equals(what)) {
+            // No speech recognizer on the phone at all: send the user to the Google app in the Play Store.
+            Toast.makeText(this, "Install or update the Google app, then come back", Toast.LENGTH_LONG).show();
+            if (!tryStart(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("market://details?id=com.google.android.googlequicksearchbox")))) {
+                tryStart(new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.googlequicksearchbox")));
+            }
+            return;
+        }
         if ("sr".equals(what)) {
             if (Build.VERSION.SDK_INT >= 33 && onDeviceSpeech()) {
                 try {
