@@ -66,6 +66,7 @@ public class MainActivity extends Activity {
     private static final int REQ_MIC = 1;
 
     private WebView web;
+    private Billing billing;
     private View rootView;
     private WebViewAssetLoader assetLoader;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -151,6 +152,15 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new TtsBridge(), "AndroidTTS");
         web.addJavascriptInterface(new SetupBridge(), "AndroidSetup");
 
+        billing = new Billing(this, new Billing.Listener() {
+            @Override
+            public void onChanged() {
+                if (billing != null) evalJs("window.__gvBilling&&window.__gvBilling(" + billing.stateJson() + ")");
+            }
+        });
+        web.addJavascriptInterface(new BillingBridge(), "AndroidBilling");
+        billing.start();
+
         boolean injectedAtStart = false;
         try {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
@@ -233,7 +243,8 @@ public class MainActivity extends Activity {
                         "(function(){try{return 'offline='+OFFLINE+' lines='+(CORPUS?CORPUS.length:0)"
                                 + "+' sr='+(typeof webkitSpeechRecognition)+' tts='+(typeof speechSynthesis)"
                                 + "+' fontsLoaded='+Array.from(document.fonts).filter(function(f){return f.status==='loaded';}).length"
-                                + "+'/'+document.fonts.size;}"
+                                + "+'/'+document.fonts.size+' billing='+AndroidBilling.getState()"
+                                + "+' entitled='+entitled();}"
                                 + "catch(e){return 'ERR '+e;}})()",
                         new android.webkit.ValueCallback<String>() {
                             @Override
@@ -302,6 +313,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (billing != null) billing.refresh();
         paused = false;
         if (sessionActive && !stopRequested && !ttsSpeaking && recognizer != null) listen();
     }
@@ -316,6 +328,10 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {
             }
             recognizer = null;
+        }
+        if (billing != null) {
+            billing.end();
+            billing = null;
         }
         if (tts != null) {
             try {
@@ -789,6 +805,54 @@ public class MainActivity extends Activity {
             ttsFinished();
         }
     };
+
+    // ---------------------------------------------------------------
+    // Subscription bridge (Google Play Billing)
+    // ---------------------------------------------------------------
+
+    private class BillingBridge {
+        @JavascriptInterface
+        public String getState() {
+            return billing == null ? "{}" : billing.stateJson();
+        }
+
+        @JavascriptInterface
+        public void subscribe() {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (billing == null || !billing.subscribe()) {
+                        Toast.makeText(MainActivity.this,
+                                "Google Play is not ready. Check your internet and try again.",
+                                Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void refresh() {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (billing != null) billing.refresh();
+                }
+            });
+        }
+
+        /** Opens Google Play's own screen for cancelling or changing the subscription. */
+        @JavascriptInterface
+        public void manage() {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    tryStart(new Intent(Intent.ACTION_VIEW, Uri.parse(
+                            "https://play.google.com/store/account/subscriptions?sku=" + Billing.PRODUCT_ID
+                                    + "&package=" + getPackageName())));
+                }
+            });
+        }
+    }
 
     // ---------------------------------------------------------------
     // Offline pack prompts: tells the page which of the phone's offline

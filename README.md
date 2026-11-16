@@ -32,6 +32,13 @@ The app targets Android 16 (API level 36). Privacy policy: [PRIVACY.md](PRIVACY.
 
 If a pack is missing and the phone can download it, a **Download for offline use** button appears on the start screen. If listening fails for lack of the Punjabi pack, the message that appears has a download button too.
 
+## Subscription
+
+- Without a subscription: 5 minutes of listening per day (counted on the phone).
+- With the subscription: unlimited listening. The plan, its price and the 7-day free trial are set in Play Console, not in the code.
+- Play Console product ID must be exactly `gurbani_monthly` (a subscription with a monthly base plan and a free-trial offer).
+- Debug builds are always unlocked. Billing code: `src/main/java/com/gurbani/app/Billing.java`.
+
 ## Modes
 
 - **Self-reading** — shows the line you are reading; can speak its meaning, then move on.

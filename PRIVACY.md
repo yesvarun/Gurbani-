@@ -24,6 +24,10 @@ The scripture text, translations and fonts are included in the app. The app keep
 
 The app works without internet apart from online speech recognition. If the built-in scripture cannot be loaded, the app may fetch scripture text from the public GurbaniNow API (`api.gurbaninow.com`). Such a request contains the search words or page number only, and no information that identifies you.
 
+## Subscription and payments
+
+The app offers an optional monthly subscription through Google Play. Payments are handled entirely by Google Play Billing; the app and the developer never see your card, UPI or bank details. The app only asks Google Play whether your Google account has an active subscription, and keeps that yes/no answer on your phone. The daily free listening time is counted on your phone only.
+
 ## Spoken meanings
 
 If you turn on "Spoken meaning", the translation text is read aloud by the text-to-speech engine on your phone. Nothing is sent to the developer.

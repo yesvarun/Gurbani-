@@ -98,6 +98,24 @@
   .stop-dot span{ font-family:'Noto Serif Gurmukhi'; font-size:24px; line-height:1;}
   .stop-dot::after{ content:""; position:absolute; inset:-5px; border-radius:50%;
     border:2px solid var(--saffron); animation:pulse 1.6s ease-out infinite;}
+  /* subscription */
+  .sub-pill{ border:1px solid rgba(231,184,95,.8); background:rgba(231,184,95,.18); color:var(--gold);
+    border-radius:22px; padding:9px 18px; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:16px;}
+  .sub-link{ border:none; background:transparent; color:var(--cream-dim); opacity:.8; cursor:pointer;
+    font-family:'Cormorant Garamond',serif; font-size:13px; text-decoration:underline;}
+  .free-left{ position:fixed; top:22px; left:14px; z-index:7; font-family:'Cormorant Garamond',serif;
+    font-size:13px; color:var(--cream); background:rgba(0,0,0,.35); border-radius:14px; padding:5px 11px;}
+  .paywall{ position:fixed; inset:0; z-index:9; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:14px; padding:28px; text-align:center;
+    background:radial-gradient(70% 60% at 50% 40%, rgba(60,14,14,.97), rgba(30,6,6,.99));}
+  .paywall .pw-om{ font-family:'Noto Serif Gurmukhi'; font-size:54px; color:var(--gold); line-height:1;}
+  .paywall h2{ font-family:'Cormorant Garamond',serif; font-weight:500; font-size:26px; color:#fff;}
+  .paywall p{ font-family:'Cormorant Garamond',serif; font-size:17px; line-height:1.5; color:var(--cream); max-width:340px;}
+  .paywall .pw-small{ font-size:13px; color:var(--cream-dim); line-height:1.5;}
+  .pw-btn{ border:none; cursor:pointer; border-radius:26px; padding:14px 26px; font-size:18px; font-weight:600;
+    font-family:'Cormorant Garamond',serif; color:#3d0f0f;
+    background:radial-gradient(circle at 36% 30%, #f3ad4e, var(--saffron)); box-shadow:0 6px 20px rgba(0,0,0,.4);}
+  .pw-btn:disabled{ opacity:.5;}
   .install-pill{ border:1px solid rgba(231,184,95,.5); background:rgba(231,184,95,.12);
     color:var(--gold); border-radius:22px; padding:8px 18px; cursor:pointer;
     font-family:'Cormorant Garamond',serif; font-size:15px; letter-spacing:.5px;}
@@ -186,8 +204,24 @@
       <div id="setupNote" class="set-note"></div>
     </div>
     <button id="dlBtn" class="dl-pill">&#11015; Save scripture offline</button>
+    <button id="subPill" class="sub-pill hidden"></button>
+    <button id="manageSub" class="sub-link hidden">Manage subscription</button>
     <button id="install" class="install-pill hidden">&#11015; Install app</button>
     <div class="credit">ਐਪ ਨਿਰਮਾਤਾ : ਦਾਸ ਵਰੁਣ ਦੁੱਗਲ</div>
+  </div>
+
+  <!-- free-time countdown for non-subscribers -->
+  <div id="freeLeft" class="free-left hidden"></div>
+
+  <!-- subscription screen -->
+  <div id="paywall" class="paywall hidden">
+    <div class="pw-om">ੴ</div>
+    <h2>Unlimited listening</h2>
+    <p id="pwLead"></p>
+    <button id="pwBuy" class="pw-btn"></button>
+    <p id="pwTerms" class="pw-small"></p>
+    <button id="pwRestore" class="sub-link">Already subscribed? Restore</button>
+    <button id="pwClose" class="sub-link">Not now</button>
   </div>
 
   <!-- listening indicator (tap to stop) -->
@@ -795,6 +829,7 @@ async function onHeard(all){
 /* ---------- Speech recognition ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 function startRecog(){
+  if(!entitled() && freeLeft()<=0){ showPaywall("limit"); return; }
   if(!SR){ showWarn("Live listening needs <b>Chrome on Android</b>. (iPhone Safari can't do speech-to-text here.)"); return; }
   recog=new SR(); recog.lang="pa-IN"; recog.continuous=true; recog.interimResults=true; recog.maxAlternatives=1;
   recog.onresult=e=>{
@@ -851,6 +886,7 @@ function stopRecog(){
   $("heard").textContent="";
   if(recog){ try{ recog.stop(); }catch(_){} }
   releaseWake();                                // let the screen sleep again
+  try{ paintSub(); }catch(_){}
 }
 // Screen Wake Lock — stops the phone dimming/locking during recitation.
 let wakeLock=null;
@@ -923,6 +959,75 @@ window.__gvSetup=function(st){
 if(window.AndroidSetup){
   try{ AndroidSetup.check(); }catch(_){}
   document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ try{ AndroidSetup.check(); }catch(_){} } });
+}
+
+/* ---------- Subscription (APK only): 5 free minutes of listening a day, unlimited with the plan ---------- */
+const FREE_SECONDS=300;
+let billing={available:false, subscribed:false, price:"", trial:false};
+const hasBilling = () => !!window.AndroidBilling;
+const entitled   = () => !hasBilling() || billing.subscribed;
+const dayKey = () => { const d=new Date(); return "use-"+d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); };
+function usedToday(){ try{ return parseInt(localStorage.getItem(dayKey())||"0",10)||0; }catch(e){ return 0; } }
+function addUsed(n){ try{ localStorage.setItem(dayKey(), String(usedToday()+n)); }catch(e){} }
+const freeLeft = () => Math.max(0, FREE_SECONDS-usedToday());
+const mmss = s => Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+const priceText = () => (billing.price || "\u20B9100")+" per month";
+
+function paintSub(){
+  if(!hasBilling()) return;
+  const pill=$("subPill"), man=$("manageSub");
+  if(billing.subscribed){
+    pill.classList.add("hidden"); man.classList.remove("hidden"); $("freeLeft").classList.add("hidden");
+  } else {
+    man.classList.add("hidden"); pill.classList.remove("hidden");
+    pill.textContent = (billing.trial ? "\u2B50 Unlimited listening \u00B7 7 days free" : "\u2B50 Unlimited listening \u00B7 "+priceText())
+      + "  (free today: "+mmss(freeLeft())+")";
+  }
+  // subscription screen texts
+  const buy=$("pwBuy"), terms=$("pwTerms");
+  if(!billing.available){
+    buy.textContent="Subscribe"; buy.disabled=true;
+    terms.textContent="Google Play billing is not available right now. Check your internet connection and that the app was installed from Google Play.";
+  } else if(billing.trial){
+    buy.disabled=false; buy.textContent="Start 7-day free trial";
+    terms.textContent="Free for 7 days, then "+priceText()+". Renews automatically every month until cancelled. Cancel any time in Google Play \u2192 Payments & subscriptions.";
+  } else {
+    buy.disabled=false; buy.textContent="Subscribe \u00B7 "+priceText();
+    terms.textContent=priceText().replace(/^./,c=>c.toUpperCase())+". Renews automatically every month until cancelled. Cancel any time in Google Play \u2192 Payments & subscriptions.";
+  }
+}
+function showPaywall(why){
+  $("pwLead").textContent = why==="limit"
+    ? "Your 5 free minutes for today are over. Subscribe to keep listening without limits."
+    : "Listen as long as you like, every day. Without a subscription you get 5 free minutes a day.";
+  paintSub();
+  $("paywall").classList.remove("hidden");
+  try{ AndroidBilling.refresh(); }catch(_){}
+}
+function hidePaywall(){ $("paywall").classList.add("hidden"); }
+window.__gvBilling=function(st){
+  if(!st) return;
+  const was=billing.subscribed;
+  billing=st; paintSub();
+  if(billing.subscribed && !was) hidePaywall();
+};
+if(hasBilling()){
+  try{ billing=JSON.parse(AndroidBilling.getState()); }catch(_){}
+  paintSub();
+  $("subPill").addEventListener("click", ()=>showPaywall("info"));
+  $("manageSub").addEventListener("click", ()=>{ try{ AndroidBilling.manage(); }catch(_){} });
+  $("pwBuy").addEventListener("click", ()=>{ try{ AndroidBilling.subscribe(); }catch(_){} });
+  $("pwRestore").addEventListener("click", ()=>{ try{ AndroidBilling.refresh(); }catch(_){} });
+  $("pwClose").addEventListener("click", hidePaywall);
+  // count free listening time, one second at a time, only while actually listening
+  setInterval(()=>{
+    const el=$("freeLeft");
+    if(!listening || entitled()){ el.classList.add("hidden"); return; }
+    addUsed(1);
+    const left=freeLeft();
+    el.textContent="Free today "+mmss(left); el.classList.remove("hidden");
+    if(left<=0){ stopRecog(); el.classList.add("hidden"); paintSub(); showPaywall("limit"); }
+  }, 1000);
 }
 
 /* ---------- Startup ---------- */
