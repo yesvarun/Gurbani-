@@ -50,4 +50,6 @@ dependencies {
     implementation 'androidx.webkit:webkit:1.11.0'
     // Google Play subscription
     implementation 'com.android.billingclient:billing:9.1.0'
+    // keeps the Kotlin runtime pieces pulled in by the libraries on one version
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
 }
