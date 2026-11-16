@@ -88,7 +88,11 @@ public class MainActivity extends Activity {
 
     // recognizer start/stop beep suppression
     private AudioManager audio;
-    private boolean muted;
+    private final int[] MUTE_STREAMS = {
+            AudioManager.STREAM_MUSIC, AudioManager.STREAM_NOTIFICATION, AudioManager.STREAM_SYSTEM
+    };
+    private final boolean[] mutedByUs = new boolean[3];
+    private boolean paused;
     private final Runnable unmuteTask = new Runnable() {
         @Override
         public void run() {
@@ -227,8 +231,23 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        paused = true;
+        // never leave the phone muted or the mic running while the app is in the background
+        if (sessionActive && recognizer != null) {
+            try {
+                recognizer.cancel();
+            } catch (Exception ignored) {
+            }
+        }
         handler.removeCallbacks(unmuteTask);
         unmute();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        paused = false;
+        if (sessionActive && !stopRequested && !ttsSpeaking && recognizer != null) listen();
     }
 
     @Override
@@ -287,17 +306,23 @@ public class MainActivity extends Activity {
     // and continuous listening restarts it after each pause.
     // ---------------------------------------------------------------
 
-    private void muteForStart() {
-        if (ttsSpeaking || audio == null) return;
+    /**
+     * Silences the recognizer's chimes. They play on start, on every result and on
+     * every "no match", so the streams stay silenced for the whole listening session.
+     */
+    private void muteNow() {
+        if (audio == null) return;
         handler.removeCallbacks(unmuteTask);
-        try {
-            if (!muted) {
-                audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0);
-                muted = true;
+        for (int n = 0; n < MUTE_STREAMS.length; n++) {
+            if (mutedByUs[n]) continue;
+            try {
+                if (audio.isStreamMute(MUTE_STREAMS[n])) continue; // user already had it silenced
+                audio.adjustStreamVolume(MUTE_STREAMS[n], AudioManager.ADJUST_MUTE, 0);
+                mutedByUs[n] = true;
+            } catch (Exception ignored) {
+                // e.g. notification stream is locked while Do Not Disturb is on
             }
-        } catch (Exception ignored) {
         }
-        handler.postDelayed(unmuteTask, 2500); // safety net
     }
 
     private void unmuteSoon(long ms) {
@@ -306,12 +331,15 @@ public class MainActivity extends Activity {
     }
 
     private void unmute() {
-        if (!muted || audio == null) return;
-        try {
-            audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
-        } catch (Exception ignored) {
+        if (audio == null) return;
+        for (int n = 0; n < MUTE_STREAMS.length; n++) {
+            if (!mutedByUs[n]) continue;
+            try {
+                audio.adjustStreamVolume(MUTE_STREAMS[n], AudioManager.ADJUST_UNMUTE, 0);
+            } catch (Exception ignored) {
+            }
+            mutedByUs[n] = false;
         }
-        muted = false;
     }
 
     // ---------------------------------------------------------------
@@ -436,7 +464,7 @@ public class MainActivity extends Activity {
     }
 
     private void listen() {
-        if (recognizer == null) return;
+        if (recognizer == null || paused || ttsSpeaking) return;
         Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         if (!lang.isEmpty()) {
@@ -447,7 +475,7 @@ public class MainActivity extends Activity {
         i.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
         i.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getPackageName());
         if (preferOffline) i.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true);
-        muteForStart();
+        muteNow();
         try {
             recognizer.startListening(i);
         } catch (Exception e) {
@@ -467,7 +495,7 @@ public class MainActivity extends Activity {
     }
 
     private void endSpeech() {
-        unmuteSoon(600);
+        unmuteSoon(900); // after the recognizer's closing chime
         if (!sessionActive) return;
         sessionActive = false;
         startedEmitted = false;
@@ -514,7 +542,6 @@ public class MainActivity extends Activity {
     private final RecognitionListener listener = new RecognitionListener() {
         @Override
         public void onReadyForSpeech(Bundle params) {
-            unmuteSoon(700);
             if (sessionActive && !startedEmitted) {
                 startedEmitted = true;
                 emitSpeech("start", null);
@@ -629,15 +656,21 @@ public class MainActivity extends Activity {
                             }
                         }
                         tts.setSpeechRate(rate > 0 ? (float) rate : 1f);
+                        ttsSpeaking = true;
+                        if (sessionActive && recognizer != null) {
+                            try {
+                                recognizer.cancel(); // mic off so it can't hear (or chime over) the voice
+                            } catch (Exception ignored) {
+                            }
+                        }
                         handler.removeCallbacks(unmuteTask);
                         unmute();
-                        ttsSpeaking = true;
                         if (tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, id) != TextToSpeech.SUCCESS) {
-                            ttsSpeaking = false;
+                            ttsFinished();
                             emitTts("error", id);
                         }
                     } catch (Exception e) {
-                        ttsSpeaking = false;
+                        ttsFinished();
                         emitTts("error", id);
                     }
                 }
@@ -649,16 +682,28 @@ public class MainActivity extends Activity {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    ttsSpeaking = false;
                     if (tts != null && ttsReady) {
                         try {
                             tts.stop();
                         } catch (Exception ignored) {
                         }
                     }
+                    ttsFinished();
                 }
             });
         }
+    }
+
+    /** Voice finished (any thread): go back to listening if a session is still on. */
+    private void ttsFinished() {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (!ttsSpeaking) return;
+                ttsSpeaking = false;
+                if (sessionActive && !stopRequested && recognizer != null) listen();
+            }
+        });
     }
 
     private void emitTts(String type, String id) {
@@ -673,19 +718,19 @@ public class MainActivity extends Activity {
 
         @Override
         public void onDone(String utteranceId) {
-            ttsSpeaking = false;
+            ttsFinished();
             emitTts("end", utteranceId);
         }
 
         @Override
         public void onError(String utteranceId) {
-            ttsSpeaking = false;
+            ttsFinished();
             emitTts("error", utteranceId);
         }
 
         @Override
         public void onStop(String utteranceId, boolean interrupted) {
-            ttsSpeaking = false;
+            ttsFinished();
         }
     };
 

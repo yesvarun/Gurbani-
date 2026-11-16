@@ -401,16 +401,19 @@ function loadWindow(gi){
 }
 
 // Local equivalent of seek(): lock the shabad using the on-device index (no network).
-function localLock(qP){
+function localLock(qP, relaxed){
   const {best,second}=localBest(qP);
   if(!best) return;
   const margin=best.sc-(second?second.sc:0);
   const firstLock=!shabad;
-  const confident = firstLock ? (best.sc>=5 && (margin>=2||!second)) : (best.sc>=9 && margin>=5);
+  const confident = firstLock ? (best.sc>=5 && (margin>=2||!second))
+                  : relaxed   ? (best.sc>=6 && (margin>=2||!second))     // out of sync → re-find readily
+                              : (best.sc>=9 && margin>=5);
   if(!confident) return;
   const gi=best.i;
   if(shabad && curShabadId==="local" && gi>=winBase && gi<winBase+shabad.length){
-    setActive(gi-winBase); mode="following"; missStreak=0; return;   // already in window
+    if(gi-winBase!==curIdx) setActive(gi-winBase);                   // already in window
+    mode="following"; missStreak=0; lastGood=Date.now(); return;
   }
   loadWindow(gi);
   setActive(gi-winBase);
@@ -425,10 +428,13 @@ async function initOffline(){
   dlBusy=true;
   try{
     const el=$("offline"); if(el){ el.classList.remove("hidden"); el.className="offline-badge"; el.textContent="Loading scripture…"; }
+    const lb=$("dlBtn"); if(lb){ lb.textContent="Loading scripture…"; lb.disabled=true; }
     const r=await fetch("corpus.json");
     if(r.ok){
       const c=await r.json();
-      if(Array.isArray(c) && c.length>10000){ CORPUS=c; buildIndex(); setOfflineBadge("ready"); $("dlBtn").classList.add("hidden"); dlBusy=false; return; }
+      if(Array.isArray(c) && c.length>10000){ CORPUS=c; buildIndex(); setOfflineBadge("ready");
+        $("dlBtn").innerHTML="◆ Full scripture on device · "+c.length.toLocaleString()+" lines";
+        dlBusy=false; return; }
     }
   }catch(e){}
   dlBusy=false; setOfflineBadge("hide");
@@ -508,7 +514,9 @@ const FOLLOW_WIN=4;    // SHORT leading-edge window so the line you're saying NO
 const LOST_LIMIT=6;    // forward misses before considering a new shabad
 let hardErr=false;
 let recog=null, listening=false, lastTail="", lastFire=0, pumpBusy=false;
-let lastSync=0, lastHeard=0, autoSteps=0, autoTimer=null;   // auto-advance bookkeeping
+let lastSync=0, lastHeard=0, autoSteps=0, autoTimer=null;
+let lastGood=0;                 // last time the heard words really matched where we are
+const RESYNC_MS=7000;           // words arriving but nothing matching for this long → re-find the place   // auto-advance bookkeeping
 let nextId=null, extending=false; const loaded=new Set();   // continuous forward flow
 const ADV_MIN=3;         // a forward line must score at least this to win
 const ADV_MARGIN=3;      // …and beat the current line by at least this much before we move
@@ -551,7 +559,7 @@ function setActive(idx){
   // reset reading-coverage for the line now being recited (curIdx)
   lineCover=new Set();
   lineDist(idx);
-  lastSync=Date.now();
+  lastSync=Date.now(); lastGood=lastSync;
 }
 // Speak a line's translation, then run cb() when done (used by self-reading pacing).
 function speakThen(idx, cb){
@@ -583,7 +591,9 @@ function coverActive(all){
   if(curIdx<0) return;
   const d=lineDist(curIdx); if(!d.length) return;
   const set=shabad[curIdx]._dist;
+  const before=lineCover.size;
   for(const w of all.slice(-6)){ const p=phon(w); if(set.has(p)) lineCover.add(p); }
+  if(lineCover.size>before) lastGood=Date.now();
 }
 // Has the LAST distinctive word of the current line been recited? (strong "line finished" signal)
 function lastWordHeard(){
@@ -691,10 +701,10 @@ function locate(qP){
   if(curIdx>=shabad.length-3) extendForward();
   return true;
 }
-async function seek(recent){
+async function seek(recent, relaxed){
   const qP=recent.map(phon).filter(Boolean);
   if(qP.length<2) return;
-  if(OFFLINE){ localLock(qP); return; }          // instant on-device matching, no network
+  if(OFFLINE){ localLock(qP, relaxed); return; } // instant on-device matching, no network
   let data=null;
   try{ data=await search(recent.join(" "),6); }
   catch(e){ return; }
@@ -702,13 +712,16 @@ async function seek(recent){
   const {best, second} = pickShabad(data, qP);
   if(!best) return;
   const margin = best.sc - (second ? second.sc : 0);
-  const firstLock = !curShabadId;
+  const firstLock = !curShabadId || !!relaxed;
   // Lock fast on first find; be strict before SWITCHING shabads mid-recitation.
   const confident = firstLock
     ? (best.sc>=5 && (margin>=2 || !second))
     : (best.sc>=9 && margin>=5);
   if(!confident){ pendingId=null; return; }
-  if(best.id && best.id===curShabadId){ mode="following"; missStreak=0; return; } // already here
+  if(best.id && best.id===curShabadId){                                            // already here
+    if(relaxed && shabad){ const bi=bestIndex(qP, shabad); if(bi!==curIdx) setActive(bi); }
+    mode="following"; missStreak=0; lastGood=Date.now(); return;
+  }
   if(!firstLock && best.id && best.id!==pendingId){ pendingId=best.id; return; }   // two-read confirm to switch
   pendingId=null;
   let lines=null, nn=null;
@@ -721,6 +734,14 @@ async function seek(recent){
   setActive(bestIndex(qP, lines));
   mode="following"; missStreak=0;
 }
+// Out of sync: words keep arriving but none fit the line on screen → listen afresh and re-find the place.
+function maybeResync(all, now){
+  if(!lastGood || now-lastGood<RESYNC_MS || pumpBusy || all.length<SEEK_MIN) return false;
+  lastGood=now-RESYNC_MS/2;                 // if this try doesn't lock, try again in a few seconds
+  pumpBusy=true;
+  seek(all.slice(-SEEK_WIN), true).catch(()=>{}).finally(()=>{ pumpBusy=false; });
+  return true;
+}
 async function onHeard(all){
   if(shabad) highlight(new Set(all.slice(-12).map(phon)));
   const now=Date.now();
@@ -731,10 +752,12 @@ async function onHeard(all){
     if(selfPaced()){
       if(awaitTTS) return;            // paused while the meaning is spoken
       coverActive(all);
+      maybeResync(all, now);
       return;
     }
     // CONTINUOUS following (gurdwara, or self-reading with meaning Off)
     coverActive(all);                  // track how much of the current line has been recited
+    if(maybeResync(all, now)) return;
     const tail=all.slice(-FOLLOW_WIN);
     const key="F"+tail.join(" ");
     if(key===lastTail || pumpBusy || now-lastFire<280) return;
@@ -742,7 +765,8 @@ async function onHeard(all){
     try{
       const qp=tail.map(phon).filter(Boolean);
       const ok = appMode==="kirtan" ? locate(qp) : follow(qp);
-      if(ok){ missStreak=0; autoSteps=0; lastSync=Date.now(); }
+      if(ok){ missStreak=0; autoSteps=0; lastSync=Date.now();
+        if(curIdx>=0 && scoreP(qp, shabad[curIdx].p)>=ADV_MIN) lastGood=lastSync; }
       else { missStreak++; if(missStreak>=LOST_LIMIT) await seek(all.slice(-SEEK_WIN)); }
     } finally { pumpBusy=false; }
     return;
@@ -793,7 +817,7 @@ function startRecog(){
   try{
     recog.start(); listening=true; mode="seeking"; committed=[]; listenStart=Date.now();
     shabad=null; curShabadId=null; curIdx=-1; actIdx=-1; pendingId=null; lastTail="";
-    lastSync=0; lastHeard=0; autoSteps=0; nextId=null; extending=false; loaded.clear();
+    lastSync=0; lastHeard=0; lastGood=0; autoSteps=0; nextId=null; extending=false; loaded.clear();
     awaitTTS=false; lineCover=new Set();
     clearInterval(autoTimer); autoTimer=setInterval(autoAdvance, 900);
     acquireWake();                              // keep the screen on while listening
