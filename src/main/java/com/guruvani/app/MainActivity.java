@@ -1,4 +1,4 @@
-package com.gurbani.app;
+package com.guruvani.app;
 
 import android.Manifest;
 import android.app.Activity;

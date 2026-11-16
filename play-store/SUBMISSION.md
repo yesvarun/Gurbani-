@@ -19,7 +19,7 @@ Files in this folder:
 | Default language | English (India) – en-IN |
 | App or game | App |
 | Free or paid | Free (the subscription is an in-app purchase) |
-| Package name (set by the upload) | `com.gurbani.app` |
+| Package name (set by the upload) | `com.guruvani.app` |
 
 ---
 

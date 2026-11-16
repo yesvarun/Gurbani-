@@ -4,9 +4,9 @@
 set -uo pipefail
 APK=$(ls build/outputs/apk/debug/*.apk | head -1)
 adb install -r "$APK"
-adb shell pm grant com.gurbani.app android.permission.RECORD_AUDIO
+adb shell pm grant com.guruvani.app android.permission.RECORD_AUDIO
 adb logcat -c
-adb shell am start -n com.gurbani.app/.MainActivity --ez selftest true
+adb shell am start -n com.guruvani.app/.MainActivity --ez selftest true
 sleep 50
 adb exec-out screencap -p > /tmp/screen.png || true
 adb logcat -d > /tmp/logcat.txt
@@ -15,7 +15,7 @@ grep -E "GurbaniSelfTest" /tmp/logcat.txt | tail -40
 echo "===== crashes"
 grep -E "FATAL EXCEPTION|AndroidRuntime: |UnsatisfiedLink|chromium.*(Uncaught|ERROR)" /tmp/logcat.txt | grep -v "GmsCore\|com.google" | tail -40
 echo "===== process"
-PID=$(adb shell pidof com.gurbani.app || true); echo "pid=$PID"
+PID=$(adb shell pidof com.guruvani.app || true); echo "pid=$PID"
 ok=1
 [ -n "$PID" ] || { echo "FAIL: app is not running"; ok=0; }
 grep -q "GurbaniSelfTest: PAGE.*offline=true" /tmp/logcat.txt || { echo "FAIL: bundled scripture did not load"; ok=0; }

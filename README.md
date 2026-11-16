@@ -37,7 +37,7 @@ If a pack is missing and the phone can download it, a **Download for offline use
 - Without a subscription: 5 minutes of listening per day (counted on the phone).
 - With the subscription: unlimited listening. The plan, its price and the 7-day free trial are set in Play Console, not in the code.
 - Play Console product ID must be exactly `gurbani_monthly` (a subscription with a monthly base plan and a free-trial offer).
-- Debug builds are always unlocked. Billing code: `src/main/java/com/gurbani/app/Billing.java`.
+- Debug builds are always unlocked. Billing code: `src/main/java/com/guruvani/app/Billing.java`.
 
 ## Modes
 
@@ -65,7 +65,7 @@ To rebuild without changing a file: **Actions → Build APK → Run workflow**.
 | Path | Purpose |
 |---|---|
 | `src/main/assets/index.html` | The app itself (single page) |
-| `src/main/java/com/gurbani/app/MainActivity.java` | Android shell: speech recognition, voices, offline-pack prompts |
+| `src/main/java/com/guruvani/app/MainActivity.java` | Android shell: speech recognition, voices, offline-pack prompts |
 | `src/main/AndroidManifest.xml` | Permissions (microphone, internet) |
 | `src/main/res/` | App icon |
 | `scripts/fetch-corpus.mjs` | Build step: scripture download |

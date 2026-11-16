@@ -1,4 +1,4 @@
-package com.gurbani.app;
+package com.guruvani.app;
 
 import android.app.Activity;
 import android.content.Context;
