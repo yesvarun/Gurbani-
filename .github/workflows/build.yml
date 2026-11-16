@@ -38,18 +38,6 @@ jobs:
           node scripts/fetch-fonts.mjs
           ls -lh src/main/assets/ src/main/assets/fonts/
 
-      # Punjabi speech recognition is packed inside the APK too (library + model).
-      - name: Restore speech engine cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            libs
-            src/main/assets/asr
-          key: asr-v1
-
-      - name: Download speech engine
-        run: bash scripts/fetch-asr.sh
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

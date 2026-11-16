@@ -1,7 +1,7 @@
 name: Emulator check
 
 # Optional check: boots the app in an Android emulator and verifies it starts,
-# loads the bundled scripture and that the built-in speech engine works.
+# and loads the bundled scripture and fonts.
 on:
   workflow_dispatch:
   push:
@@ -33,24 +33,6 @@ jobs:
       - name: Download fonts
         run: node scripts/fetch-fonts.mjs
 
-      - name: Restore speech engine cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            libs
-            src/main/assets/asr
-          key: asr-v1
-
-      - name: Download speech engine
-        run: bash scripts/fetch-asr.sh
-
-      - name: Make a test clip
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng ffmpeg >/dev/null
-          espeak-ng -v pa -s 130 -w /tmp/e.wav "ਸੋਚੈ ਸੋਚਿ ਨ ਹੋਵਈ ਜੇ ਸੋਚੀ ਲਖ ਵਾਰ"
-          ffmpeg -loglevel error -y -i /tmp/e.wav -ar 16000 -ac 1 -c:a pcm_s16le -bitexact -map_metadata -1 /tmp/selftest.wav
-          ls -l /tmp/selftest.wav
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -60,13 +42,9 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build test APK (with emulator libraries and test clip)
-        env:
-          APP_ABIS: x86_64,arm64-v8a
+      - name: Build APK
         run: |
-          cp /tmp/selftest.wav src/main/assets/asr/selftest.wav
           gradle assembleDebug --no-daemon --stacktrace
-          rm -f src/main/assets/asr/selftest.wav
           ls -lh build/outputs/apk/debug/
 
       - name: Enable KVM

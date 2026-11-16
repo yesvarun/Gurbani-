@@ -180,13 +180,6 @@
         <button class="emph-opt" data-emph="translation">Translation</button>
       </div>
     </div>
-    <div id="engRow" class="sub-row hidden">
-      <span class="tts-cap">Listening</span>
-      <div class="opts">
-        <button class="set-opt" data-eng="google">Google · best</button>
-        <button class="set-opt" data-eng="local">In-app · offline (rough)</button>
-      </div>
-    </div>
     <div id="setup" class="sub-row hidden">
       <span class="tts-cap">Download for offline use</span>
       <div id="setupOpts" class="opts"></div>
@@ -927,17 +920,6 @@ window.__gvSetup=function(st){
   }
   box.classList.toggle("hidden", shown===0);
 };
-// APK: choose between the speech engine built into the app (offline) and the phone's Google recognizer.
-if(window.AndroidSpeech && AndroidSpeech.hasLocal && AndroidSpeech.hasLocal()){
-  const row=$("engRow"); row.classList.remove("hidden");
-  const paint=()=>{ const e=AndroidSpeech.getEngine(); row.querySelectorAll("[data-eng]").forEach(b=>b.classList.toggle("ok", b.dataset.eng===e)); };
-  row.querySelectorAll("[data-eng]").forEach(b=>b.addEventListener("click", ()=>{
-    if(listening) return;
-    AndroidSpeech.setEngine(b.dataset.eng);
-    setTimeout(()=>{ paint(); try{ AndroidSetup.check(); }catch(_){} }, 200);
-  }));
-  paint();
-}
 if(window.AndroidSetup){
   try{ AndroidSetup.check(); }catch(_){}
   document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ try{ AndroidSetup.check(); }catch(_){} } });

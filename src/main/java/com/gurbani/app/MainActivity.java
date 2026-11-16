@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
@@ -95,14 +94,6 @@ public class MainActivity extends Activity {
     };
     private final boolean[] mutedByUs = new boolean[3];
     private boolean paused;
-
-    // built-in (in-app) Punjabi speech engine
-    private LocalAsr localAsr;
-    private boolean localBundled;
-    private boolean localFailed;
-    private boolean localActive;
-    private String engine = "google"; // "google" = phone's recognizer (default), "local" = built into the app
-    private SharedPreferences prefs;
     private final Runnable unmuteTask = new Runnable() {
         @Override
         public void run() {
@@ -115,10 +106,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        prefs = getSharedPreferences("gurbani", MODE_PRIVATE);
-        localBundled = LocalAsr.isBundled(this);
-        engine = prefs.getString("engine2", "google");
-        if (localBundled) localAsr = new LocalAsr(this, localListener);
 
         assetLoader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
@@ -207,32 +194,20 @@ public class MainActivity extends Activity {
 
         web.loadUrl(START_URL);
 
-        // Load the built-in speech model shortly after launch (once the scripture has had a head start).
-        if (localAsr != null && "local".equals(engine)) {
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (localAsr != null) localAsr.warmUp();
-                }
-            }, 2500);
-        }
-
-        // Automated build check (never used in normal runs): transcribe a test clip and report page state.
+        // Automated build check (never used in normal runs): report page state to the log.
         if (getIntent() != null && getIntent().getBooleanExtra("selftest", false)) runSelfTest();
     }
 
     private void runSelfTest() {
-        Log.i("GurbaniSelfTest", "APP_STARTED bundledAsr=" + localBundled);
-        if (localAsr != null) localAsr.selfTest("asr/selftest.wav");
+        Log.i("GurbaniSelfTest", "APP_STARTED");
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 web.evaluateJavascript(
                         "(function(){try{return 'offline='+OFFLINE+' lines='+(CORPUS?CORPUS.length:0)"
                                 + "+' sr='+(typeof webkitSpeechRecognition)+' tts='+(typeof speechSynthesis)"
-                                + "+' setup='+document.getElementById('setupOpts').children.length"
                                 + "+' fontsLoaded='+Array.from(document.fonts).filter(function(f){return f.status==='loaded';}).length"
-                                + "+'/'+document.fonts.size+' eng='+AndroidSpeech.getEngine();}"
+                                + "+'/'+document.fonts.size;}"
                                 + "catch(e){return 'ERR '+e;}})()",
                         new android.webkit.ValueCallback<String>() {
                             @Override
@@ -283,8 +258,7 @@ public class MainActivity extends Activity {
         super.onPause();
         paused = true;
         // never leave the phone muted or the mic running while the app is in the background
-        if (localActive && localAsr != null) localAsr.setHold(true);
-        if (sessionActive && !localActive && recognizer != null) {
+        if (sessionActive && recognizer != null) {
             try {
                 recognizer.cancel();
             } catch (Exception ignored) {
@@ -298,11 +272,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         paused = false;
-        if (localActive) {
-            if (localAsr != null && !ttsSpeaking) localAsr.setHold(false);
-        } else if (sessionActive && !stopRequested && !ttsSpeaking && recognizer != null) {
-            listen();
-        }
+        if (sessionActive && !stopRequested && !ttsSpeaking && recognizer != null) listen();
     }
 
     @Override
@@ -315,10 +285,6 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {
             }
             recognizer = null;
-        }
-        if (localAsr != null) {
-            localAsr.release();
-            localAsr = null;
         }
         if (tts != null) {
             try {
@@ -406,28 +372,6 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------
 
     private class SpeechBridge {
-        /** "local" (built into the app) or "google" (phone's recognizer). */
-        @JavascriptInterface
-        public String getEngine() {
-            return useLocal() ? "local" : "google";
-        }
-
-        @JavascriptInterface
-        public boolean hasLocal() {
-            return localBundled && !localFailed;
-        }
-
-        @JavascriptInterface
-        public void setEngine(final String e) {
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    engine = "local".equals(e) ? "local" : "google";
-                    prefs.edit().putString("engine2", engine).apply();
-                }
-            });
-        }
-
         @JavascriptInterface
         public void start(final String language, final boolean isContinuous, final boolean wantInterim) {
             handler.post(new Runnable() {
@@ -457,10 +401,6 @@ public class MainActivity extends Activity {
                 public void run() {
                     if (!sessionActive) return;
                     stopRequested = true;
-                    if (localActive) {
-                        if (localAsr != null) localAsr.stop(); // onEnd closes the session
-                        return;
-                    }
                     if (recognizer != null) {
                         try {
                             recognizer.stopListening();
@@ -486,10 +426,6 @@ public class MainActivity extends Activity {
                 public void run() {
                     if (!sessionActive) return;
                     stopRequested = true;
-                    if (localActive) {
-                        if (localAsr != null) localAsr.stop();
-                        return;
-                    }
                     if (recognizer != null) {
                         try {
                             recognizer.cancel();
@@ -502,64 +438,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private boolean useLocal() {
-        return localBundled && !localFailed && localAsr != null && "local".equals(engine);
-    }
-
-    private final LocalAsr.Listener localListener = new LocalAsr.Listener() {
-        @Override
-        public void onReady() {
-            if (sessionActive && !startedEmitted) {
-                startedEmitted = true;
-                emitSpeech("start", null);
-            }
-        }
-
-        @Override
-        public void onResult(String text, boolean isFinal) {
-            if (!sessionActive || !localActive) return;
-            if (!isFinal && !interim) return;
-            try {
-                JSONObject a = new JSONObject();
-                a.put("t", text);
-                a.put("c", isFinal ? 0.9 : 0.5);
-                JSONObject o = new JSONObject();
-                o.put("final", isFinal);
-                o.put("alts", new JSONArray().put(a));
-                emitSpeech("result", o);
-            } catch (Exception ignored) {
-            }
-            if (isFinal && !continuous && localAsr != null) localAsr.stop();
-        }
-
-        @Override
-        public void onError(String code) {
-            if ("model".equals(code)) {
-                localFailed = true; // bundled model unusable on this phone: use the phone's recognizer
-                return;
-            }
-            if (sessionActive) speechError(code);
-        }
-
-        @Override
-        public void onEnd() {
-            if (!localActive) return;
-            localActive = false;
-            if (localFailed && sessionActive && !stopRequested) {
-                beginSpeech(); // falls through to the phone's recognizer
-                return;
-            }
-            endSpeech();
-        }
-    };
-
     private void beginSpeech() {
-        if (useLocal()) {
-            localActive = true;
-            localAsr.setHold(paused || ttsSpeaking);
-            localAsr.start();
-            return;
-        }
         boolean online = isOnline();
         preferOffline = !online;
 
@@ -803,8 +682,7 @@ public class MainActivity extends Activity {
                         }
                         tts.setSpeechRate(rate > 0 ? (float) rate : 1f);
                         ttsSpeaking = true;
-                        if (localActive && localAsr != null) localAsr.setHold(true);
-                        if (sessionActive && !localActive && recognizer != null) {
+                        if (sessionActive && recognizer != null) {
                             try {
                                 recognizer.cancel(); // mic off so it can't hear (or chime over) the voice
                             } catch (Exception ignored) {
@@ -848,11 +726,7 @@ public class MainActivity extends Activity {
             public void run() {
                 if (!ttsSpeaking) return;
                 ttsSpeaking = false;
-                if (localActive) {
-                    if (localAsr != null && !paused) localAsr.setHold(false);
-                } else if (sessionActive && !stopRequested && recognizer != null) {
-                    listen();
-                }
+                if (sessionActive && !stopRequested && recognizer != null) listen();
             }
         });
     }
@@ -973,10 +847,6 @@ public class MainActivity extends Activity {
             st.put("pa", voiceStatus("pa"));
             st.put("en", voiceStatus("en"));
         } catch (Exception ignored) {
-        }
-        if (useLocal()) {
-            sendSetup(st, "ready"); // Punjabi listening is built into the app
-            return;
         }
         if (Build.VERSION.SDK_INT >= 33 && onDeviceSpeech()) {
             try {
