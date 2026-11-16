@@ -101,7 +101,7 @@ public class MainActivity extends Activity {
     private boolean localBundled;
     private boolean localFailed;
     private boolean localActive;
-    private String engine = "local"; // "local" = built into the app, "google" = phone's recognizer
+    private String engine = "google"; // "google" = phone's recognizer (default), "local" = built into the app
     private SharedPreferences prefs;
     private final Runnable unmuteTask = new Runnable() {
         @Override
@@ -117,7 +117,7 @@ public class MainActivity extends Activity {
         audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         prefs = getSharedPreferences("gurbani", MODE_PRIVATE);
         localBundled = LocalAsr.isBundled(this);
-        engine = prefs.getString("engine", "local");
+        engine = prefs.getString("engine2", "google");
         if (localBundled) localAsr = new LocalAsr(this, localListener);
 
         assetLoader = new WebViewAssetLoader.Builder()
@@ -208,7 +208,7 @@ public class MainActivity extends Activity {
         web.loadUrl(START_URL);
 
         // Load the built-in speech model shortly after launch (once the scripture has had a head start).
-        if (localAsr != null && !"google".equals(engine)) {
+        if (localAsr != null && "local".equals(engine)) {
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -422,8 +422,8 @@ public class MainActivity extends Activity {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    engine = "google".equals(e) ? "google" : "local";
-                    prefs.edit().putString("engine", engine).apply();
+                    engine = "local".equals(e) ? "local" : "google";
+                    prefs.edit().putString("engine2", engine).apply();
                 }
             });
         }
@@ -503,7 +503,7 @@ public class MainActivity extends Activity {
     }
 
     private boolean useLocal() {
-        return localBundled && !localFailed && localAsr != null && !"google".equals(engine);
+        return localBundled && !localFailed && localAsr != null && "local".equals(engine);
     }
 
     private final LocalAsr.Listener localListener = new LocalAsr.Listener() {

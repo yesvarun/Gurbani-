@@ -19,12 +19,12 @@ Each build is signed with a new debug key, so uninstall the old app before insta
 | Scripture, translation, transliteration | Yes, bundled in the APK |
 | Fonts | Yes, bundled in the APK |
 | Spoken meaning (Punjabi, English) | Yes, if that voice is installed on the phone |
-| Listening (speech to text) | Yes, a Punjabi speech model is built into the app ("In-app · offline") |
+| Listening (speech to text) | Google engine (default, accurate) needs internet or the phone's Punjabi offline pack; the built-in "In-app" engine works offline but is rough |
 
 On the start screen, **Listening** chooses the speech engine:
 
-- **In-app · offline** (default) — the built-in Punjabi model. No internet, no beeps. Text appears phrase by phrase.
-- **Google · online** — the phone's own recognizer. Needs internet (or the phone's Punjabi offline pack).
+- **Google · best** (default) — the phone's own recognizer. Accurate; needs internet (or the phone's Punjabi offline pack).
+- **In-app · offline (rough)** — the built-in Punjabi model. Works with no internet, but is much less accurate on Gurbani.
 
 The **Offline packs** row shows the state of each pack:
 
