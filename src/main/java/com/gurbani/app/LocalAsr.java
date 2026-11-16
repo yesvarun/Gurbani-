@@ -121,6 +121,20 @@ final class LocalAsr {
         });
     }
 
+    /** Loads the model ahead of time so the first tap on "listen" starts quickly. */
+    void warmUp() {
+        decoder.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ensureModel();
+                } catch (Throwable t) {
+                    Log.e(TAG, "model warm-up failed", t);
+                }
+            }
+        });
+    }
+
     /** Stops the microphone; anything already spoken is still transcribed, then onEnd fires. */
     void stop() {
         running = false;

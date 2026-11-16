@@ -207,6 +207,16 @@ public class MainActivity extends Activity {
 
         web.loadUrl(START_URL);
 
+        // Load the built-in speech model shortly after launch (once the scripture has had a head start).
+        if (localAsr != null && !"google".equals(engine)) {
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (localAsr != null) localAsr.warmUp();
+                }
+            }, 2500);
+        }
+
         // Automated build check (never used in normal runs): transcribe a test clip and report page state.
         if (getIntent() != null && getIntent().getBooleanExtra("selftest", false)) runSelfTest();
     }
@@ -221,7 +231,8 @@ public class MainActivity extends Activity {
                         "(function(){try{return 'offline='+OFFLINE+' lines='+(CORPUS?CORPUS.length:0)"
                                 + "+' sr='+(typeof webkitSpeechRecognition)+' tts='+(typeof speechSynthesis)"
                                 + "+' setup='+document.getElementById('setupOpts').children.length"
-                                + "+' font='+document.fonts.check('20px \\'Noto Serif Gurmukhi\\'');}"
+                                + "+' fontsLoaded='+Array.from(document.fonts).filter(function(f){return f.status==='loaded';}).length"
+                                + "+'/'+document.fonts.size+' eng='+AndroidSpeech.getEngine();}"
                                 + "catch(e){return 'ERR '+e;}})()",
                         new android.webkit.ValueCallback<String>() {
                             @Override
