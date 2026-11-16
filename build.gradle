@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.guruvani.app'
+    namespace 'com.gurbani.app'
     compileSdk 34
 
     defaultConfig {
-        applicationId 'com.guruvani.app'
+        applicationId 'com.gurbani.app'
         minSdk 26
         targetSdk 34
         versionCode((System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int)

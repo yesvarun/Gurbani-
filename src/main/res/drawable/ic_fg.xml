@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- maroon background -->
+    <path
+        android:fillColor="#5A1A1A"
+        android:pathData="M0,0h512v512h-512z" />
+    <group
+        android:pivotX="256"
+        android:pivotY="256"
+        android:scaleX="0.72"
+        android:scaleY="0.72">
+        <!-- gold rings -->
+        <path
+            android:strokeColor="#E7B85F"
+            android:strokeWidth="10"
+            android:strokeAlpha="0.30"
+            android:pathData="M106,256a150,150 0 1,0 300,0a150,150 0 1,0 -300,0" />
+        <path
+            android:strokeColor="#E7B85F"
+            android:strokeWidth="12"
+            android:strokeAlpha="0.55"
+            android:pathData="M146,256a110,110 0 1,0 220,0a110,110 0 1,0 -220,0" />
+        <path
+            android:strokeColor="#E7B85F"
+            android:strokeWidth="14"
+            android:strokeAlpha="0.85"
+            android:pathData="M188,256a68,68 0 1,0 136,0a68,68 0 1,0 -136,0" />
+        <!-- centre dot -->
+        <path
+            android:fillColor="#E7B85F"
+            android:pathData="M226,256a30,30 0 1,0 60,0a30,30 0 1,0 -60,0" />
+        <!-- saffron sound bars -->
+        <path
+            android:strokeColor="#D98324"
+            android:strokeWidth="16"
+            android:strokeLineCap="round"
+            android:strokeAlpha="0.9"
+            android:pathData="M384,206V306M420,226V286M92,226V286M128,206V306" />
+    </group>
+</vector>

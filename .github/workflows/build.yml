@@ -1,0 +1,69 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The full scripture is downloaded once and packed inside the APK.
+      - name: Restore scripture cache
+        uses: actions/cache@v4
+        with:
+          path: src/main/assets/corpus.json
+          key: corpus-v1
+
+      - name: Download scripture (first build only)
+        run: |
+          if [ ! -s src/main/assets/corpus.json ]; then
+            node scripts/fetch-corpus.mjs
+          fi
+
+      # Fonts are packed inside the APK too.
+      - name: Download fonts
+        run: |
+          node scripts/fetch-fonts.mjs
+          ls -lh src/main/assets/ src/main/assets/fonts/
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: cp build/outputs/apk/debug/*.apk Gurbani.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gurbani-apk
+          path: Gurbani.apk
+
+      - name: Publish to Releases (direct APK download)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag -y || true
+          gh release create latest Gurbani.apk \
+            --title "Gurbani APK" \
+            --notes "Build ${{ github.run_number }}" \
+            --target "${{ github.sha }}"

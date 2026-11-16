@@ -1,4 +1,4 @@
-package com.guruvani.app;
+package com.gurbani.app;
 
 import android.Manifest;
 import android.app.Activity;
@@ -48,7 +48,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Fully self-contained Guruvani: the page and the whole scripture live inside the APK
+ * Fully self-contained Gurbani app: the page and the whole scripture live inside the APK
  * (src/main/assets). Nothing is loaded from guruvani.com.
  */
 public class MainActivity extends Activity {

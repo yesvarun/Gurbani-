@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="pa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gurbani Live · ਗੁਰਬਾਣੀ</title>
+<meta name="theme-color" content="#5a1a1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gurbani Live">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22512%22%20height%3D%22512%22%20viewBox%3D%220%200%20512%20512%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg%22%20cx%3D%2242%25%22%20cy%3D%2232%25%22%20r%3D%2280%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%237a2626%22/%3E%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%235a1a1a%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%233d0f0f%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22112%22%20fill%3D%22url%28%23bg%29%22/%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23e7b85f%22%20stroke-linecap%3D%22round%22%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22256%22%20r%3D%22150%22%20stroke-width%3D%2210%22%20opacity%3D%220.30%22/%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22256%22%20r%3D%22110%22%20stroke-width%3D%2212%22%20opacity%3D%220.55%22/%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22256%22%20r%3D%2268%22%20stroke-width%3D%2214%22%20opacity%3D%220.85%22/%3E%3C/g%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22256%22%20r%3D%2230%22%20fill%3D%22%23e7b85f%22/%3E%3Cg%20stroke%3D%22%23d98324%22%20stroke-width%3D%2216%22%20stroke-linecap%3D%22round%22%20opacity%3D%220.9%22%3E%3Cline%20x1%3D%22384%22%20y1%3D%22206%22%20x2%3D%22384%22%20y2%3D%22306%22/%3E%3Cline%20x1%3D%22420%22%20y1%3D%22226%22%20x2%3D%22420%22%20y2%3D%22286%22/%3E%3Cline%20x1%3D%2292%22%20y1%3D%22226%22%20x2%3D%2292%22%20y2%3D%22286%22/%3E%3Cline%20x1%3D%22128%22%20y1%3D%22206%22%20x2%3D%22128%22%20y2%3D%22306%22/%3E%3C/g%3E%3C/svg%3E">
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+  :root{
+    --maroon:#5a1a1a; --maroon-deep:#3d0f0f; --saffron:#d98324;
+    --cream:#f6ecd9; --cream-dim:#cdba90; --gold:#e7b85f;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html{height:100%;}
+  body{
+    font-family:'Noto Sans Gurmukhi','Cormorant Garamond',serif;
+    background:radial-gradient(120% 80% at 50% -10%, #6e2222 0%, var(--maroon) 35%, var(--maroon-deep) 100%);
+    color:var(--cream);
+    height:100vh; height:100dvh;            /* visible height incl. mobile toolbars */
+    display:flex; flex-direction:column; overflow:hidden; position:relative;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; opacity:.05;
+    background-image:radial-gradient(#fff 1px, transparent 1px);
+    background-size:4px 4px; mix-blend-mode:overlay;
+  }
+  header{ text-align:center; padding:14px 16px 4px; position:relative; z-index:2; flex:0 0 auto;}
+  header .om{ font-family:'Noto Serif Gurmukhi'; font-size:26px; color:var(--gold); line-height:1;}
+  header h1{ font-family:'Cormorant Garamond',serif; font-weight:500; letter-spacing:3px;
+    font-size:13px; text-transform:uppercase; color:var(--cream-dim); margin-top:2px;}
+
+  #ang{ flex:0 0 auto; text-align:center; font-family:'Cormorant Garamond',serif;
+    font-style:italic; font-size:13px; color:var(--gold); opacity:.85; min-height:16px;
+    letter-spacing:.5px; padding:2px 0 4px; position:relative; z-index:2;}
+
+  /* synced-lyrics scroller */
+  .lyrics{
+    flex:1 1 auto; min-height:0; overflow-y:auto; width:100%; position:relative; z-index:2;
+    padding:34vh 22px 40vh; text-align:center; scroll-behavior:smooth;
+    -webkit-overflow-scrolling:touch;
+    mask-image:linear-gradient(to bottom, transparent 4%, #000 22%, #000 72%, transparent 96%);
+  }
+  .lrow{ margin:16px 0; opacity:.34; transition:opacity .4s ease;}
+  .lrow.prev{ opacity:.66;}
+  .lrow.prev .lg{ font-size:clamp(18px,4.8vw,25px); color:#dcc9a0; font-weight:500;}
+  .lrow .lg{ font-family:'Noto Serif Gurmukhi'; font-weight:500;
+    font-size:clamp(19px,5vw,26px); line-height:1.55; color:#e9d9b8;}
+  .lrow.active{ opacity:1;}
+  .lrow.active .lg{ font-weight:700; font-size:clamp(26px,7.4vw,42px); color:#fff;
+    text-shadow:0 2px 18px rgba(0,0,0,.35);}
+  .lrow.active .lg .w{ transition:color .25s, text-shadow .25s;}
+  .lrow.active .lg .w.on{ color:var(--gold); text-shadow:0 0 16px rgba(231,184,95,.5);}
+  .lt{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold);
+    font-size:clamp(15px,4vw,20px); margin-top:12px; line-height:1.4;}
+  .le{ font-family:'Cormorant Garamond',serif; color:var(--cream);
+    font-size:clamp(16px,4.4vw,22px); margin-top:8px; line-height:1.5;}
+  .idle-hint{ opacity:1 !important; color:var(--cream-dim); font-family:'Cormorant Garamond',serif;
+    font-style:italic; font-size:18px; line-height:1.6; max-width:340px; margin:0 auto;}
+
+  .heard{ flex:0 0 auto; text-align:center; min-height:20px; padding:6px 22px max(18px, env(safe-area-inset-bottom));
+    font-family:'Noto Sans Gurmukhi'; font-size:13px; color:var(--cream-dim); opacity:.65;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; position:relative; z-index:2;}
+  .heard b{ color:var(--saffron); font-weight:500;}
+
+  /* start overlay with big centered Ik Onkar orb */
+  .start{ position:fixed; inset:0; z-index:6; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:22px;
+    background:radial-gradient(60% 50% at 50% 45%, rgba(40,8,8,.55), rgba(40,8,8,.9));
+    transition:opacity .45s ease, transform .45s ease;}
+  .start.gone{ opacity:0; transform:scale(1.15); pointer-events:none;}
+  .orb{ border:none; cursor:pointer; width:46vw; max-width:200px; height:46vw; max-height:200px;
+    border-radius:50%; background:radial-gradient(circle at 36% 30%, #f3ad4e, var(--saffron) 58%, #9c530f);
+    display:flex; align-items:center; justify-content:center; position:relative;
+    box-shadow:0 12px 40px rgba(0,0,0,.5), inset 0 3px 8px rgba(255,255,255,.45);
+    transition:transform .15s;}
+  .orb:active{ transform:scale(.95);}
+  .orb .ek{ font-family:'Noto Serif Gurmukhi'; color:#3d0f0f; font-size:clamp(48px,24vw,92px);
+    line-height:1; margin-top:-6px;}
+  .orb::after{ content:""; position:absolute; inset:-10px; border-radius:50%;
+    border:2px solid rgba(231,184,95,.55); animation:pulse 1.8s ease-out infinite;}
+  @keyframes pulse{ 0%{transform:scale(1);opacity:.6;} 100%{transform:scale(1.4);opacity:0;} }
+  .start-label{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--cream);
+    font-size:20px; letter-spacing:1px; text-align:center;}
+  .start-label span{ display:block; font-family:'Noto Sans Gurmukhi'; font-style:normal;
+    font-size:15px; color:var(--gold); margin-top:4px;}
+
+  /* small listening indicator (also = stop) shown top-right while live */
+  .stop-dot{ position:fixed; top:14px; right:14px; z-index:7; width:46px; height:46px; border:none;
+    border-radius:50%; cursor:pointer; background:radial-gradient(circle at 36% 30%, #f3ad4e, var(--saffron));
+    color:#3d0f0f; display:flex; align-items:center; justify-content:center; position:fixed;
+    box-shadow:0 4px 14px rgba(0,0,0,.4);}
+  .stop-dot span{ font-family:'Noto Serif Gurmukhi'; font-size:24px; line-height:1;}
+  .stop-dot::after{ content:""; position:absolute; inset:-5px; border-radius:50%;
+    border:2px solid var(--saffron); animation:pulse 1.6s ease-out infinite;}
+  .install-pill{ border:1px solid rgba(231,184,95,.5); background:rgba(231,184,95,.12);
+    color:var(--gold); border-radius:22px; padding:8px 18px; cursor:pointer;
+    font-family:'Cormorant Garamond',serif; font-size:15px; letter-spacing:.5px;}
+  .install-pill:active{ transform:scale(.96);}
+  .dl-pill{ border:1px solid rgba(231,184,95,.45); background:transparent; color:var(--cream-dim);
+    border-radius:22px; padding:8px 18px; cursor:pointer; font-family:'Cormorant Garamond',serif;
+    font-size:15px; letter-spacing:.4px;}
+  .dl-pill:active{ transform:scale(.96);}
+  .dl-pill.done{ color:var(--gold); border-color:rgba(231,184,95,.8); background:rgba(231,184,95,.12); opacity:.9;}
+  .dl-pill:disabled{ cursor:default;}
+  .credit{ margin-top:6px; font-family:'Noto Sans Gurmukhi',serif; font-size:12px;
+    color:var(--cream-dim); opacity:.55; letter-spacing:.3px;}
+  .tts-row, .sub-row{ display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .tts-cap{ font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--cream-dim); font-size:14px;}
+  .opts, .tts-opts{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center;}
+  .tts-opt, .emph-opt, .mode-opt{ border:1px solid rgba(231,184,95,.4); background:transparent; color:var(--cream-dim);
+    border-radius:18px; padding:6px 14px; cursor:pointer; font-family:'Noto Sans Gurmukhi',serif; font-size:14px;}
+  .mode-opt{ padding:9px 20px; font-size:16px; font-family:'Cormorant Garamond',serif;}
+  .tts-opt.sel, .emph-opt.sel, .mode-opt.sel{ background:rgba(231,184,95,.9); color:#3d0f0f; border-color:transparent; font-weight:600;}
+  .set-opt{ border:1px solid rgba(231,184,95,.4); background:transparent; color:var(--cream-dim);
+    border-radius:18px; padding:6px 14px; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:14px;}
+  .set-opt.ok{ color:var(--gold); border-color:rgba(231,184,95,.8); background:rgba(231,184,95,.12); cursor:default;}
+  .set-opt.no{ opacity:.5; cursor:default;}
+  .set-note{ font-family:'Cormorant Garamond',serif; font-size:13px; color:var(--cream-dim); opacity:.8;
+    max-width:320px; text-align:center; line-height:1.4;}
+  .mode-row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
+  /* gurdwara "show translation big" layout */
+  .lrow.active.emph-tr .lg{ font-weight:500; font-size:clamp(17px,4.4vw,22px); color:#e9d9b8; order:2;}
+  .lrow.active.emph-tr{ display:flex; flex-direction:column;}
+  .lrow.active.emph-tr .le{ order:1; font-weight:600; font-size:clamp(20px,5.6vw,30px); color:#fff;
+    font-style:normal; text-shadow:0 2px 18px rgba(0,0,0,.35); margin-top:0; margin-bottom:10px;}
+  .lrow.active.emph-tr .lt{ order:3;}
+  .warn{ margin:8px 16px; padding:11px 14px; border-radius:12px; background:rgba(217,131,36,.15);
+    border:1px solid rgba(231,184,95,.35); color:var(--cream); font-family:'Cormorant Garamond',serif;
+    font-size:14px; line-height:1.5; text-align:center; position:relative; z-index:2; flex:0 0 auto;}
+  .hidden{ display:none !important;}
+  .offline-badge{ flex:0 0 auto; text-align:center; font-family:'Cormorant Garamond',serif;
+    font-size:12px; letter-spacing:.5px; color:var(--cream-dim); padding:2px 0;
+    background:rgba(231,184,95,.10); position:relative; z-index:2;}
+  .offline-badge.ready{ color:var(--gold);}
+</style>
+</head>
+<body>
+  <header>
+    <div class="om">ੴ</div>
+    <h1>Gurbani Live</h1>
+  </header>
+
+  <div id="warn" class="warn hidden"></div>
+  <div id="offline" class="offline-badge hidden"></div>
+  <div id="ang"></div>
+
+  <div id="lyrics" class="lyrics">
+    <div id="seekmsg" class="idle-hint"></div>
+  </div>
+
+  <div id="heard" class="heard"></div>
+
+  <!-- tap-to-listen overlay -->
+  <div id="start" class="start">
+    <button id="startBtn" class="orb" aria-label="Tap to listen"><span class="ek">ੴ</span></button>
+    <div class="start-label">Tap to begin<span>ਸ਼ੁਰੂ ਕਰੋ</span></div>
+    <div class="mode-row">
+      <button class="mode-opt sel" data-mode="self">Self-reading</button>
+      <button class="mode-opt" data-mode="gurdwara">Gurdwara</button>
+      <button class="mode-opt" data-mode="kirtan">Kirtan</button>
+    </div>
+    <div id="selfOpts" class="sub-row">
+      <span class="tts-cap">Spoken meaning</span>
+      <div class="opts">
+        <button class="tts-opt sel" data-tts="off">Off</button>
+        <button class="tts-opt" data-tts="en">English</button>
+        <button class="tts-opt" data-tts="pa">ਪੰਜਾਬੀ</button>
+      </div>
+    </div>
+    <div id="gurOpts" class="sub-row hidden">
+      <span class="tts-cap">Show big</span>
+      <div class="opts">
+        <button class="emph-opt sel" data-emph="gurbani">Gurbani</button>
+        <button class="emph-opt" data-emph="translation">Translation</button>
+      </div>
+    </div>
+    <div id="setup" class="sub-row hidden">
+      <span class="tts-cap">Offline packs</span>
+      <div id="setupOpts" class="opts"></div>
+      <div id="setupNote" class="set-note"></div>
+    </div>
+    <button id="dlBtn" class="dl-pill">&#11015; Save scripture offline</button>
+    <button id="install" class="install-pill hidden">&#11015; Install app</button>
+    <div class="credit">ਐਪ ਨਿਰਮਾਤਾ : ਦਾਸ ਵਰੁਣ ਦੁੱਗਲ</div>
+  </div>
+
+  <!-- listening indicator (tap to stop) -->
+  <button id="stop" class="stop-dot hidden" aria-label="Stop listening"><span>ੴ</span></button>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const SEARCH = "https://api.gurbaninow.com/v2/search/";
+const SHABAD = "https://api.gurbaninow.com/v2/shabad/";
+const ANG    = "https://api.gurbaninow.com/v2/ang/";
+
+/* ---------- Gurmukhi-aware helpers ---------- */
+const isGur = s => typeof s === "string" && /[\u0A00-\u0A7F]/.test(s);
+const clean = s => (s||"")
+  .replace(/[॥।,;.\u0964\u0965\|]+/g," ")
+  .replace(/[\u0A66-\u0A6F0-9]+/g," ")
+  .replace(/\s+/g," ").trim();
+const words = s => clean(s).split(" ").filter(w => w.length > 1);
+const esc = s => (s||"").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+function gurOf(n){
+  if(!n || typeof n!=="object") return null;
+  // A real verse line carries a gurmukhi/verse OBJECT with .unicode.
+  // (source / raag / writer also carry a bare .unicode and must NOT be treated as lines.)
+  const c=[n?.gurmukhi?.unicode, n?.verse?.unicode];
+  for(const x of c) if(isGur(x)) return x;
+  return null;
+}
+function engOf(n){
+  const t=n?.translation?.english ?? n?.translation?.en;
+  if(typeof t==="string") return t;
+  if(t?.default) return t.default;
+  if(typeof n?.translation?.english?.text==="string") return n.translation.english.text;
+  return "";
+}
+function tranOf(n){
+  const t=n?.transliteration?.english ?? n?.transliteration?.en;
+  if(typeof t==="string") return t;
+  if(t?.text) return t.text;
+  return "";
+}
+function punOf(n){
+  const t=n?.translation?.punjabi?.default ?? n?.translation?.punjabi;
+  if(typeof t==="string") return t;
+  if(t?.unicode) return t.unicode;
+  if(t?.default?.unicode) return t.default.unicode;
+  return "";
+}
+function hinOf(n){
+  const t=n?.translation?.hindi?.default ?? n?.translation?.hindi;
+  if(typeof t==="string") return t;
+  if(t?.unicode) return t.unicode;
+  if(t?.default) return (typeof t.default==="string"?t.default:t.default.unicode)||"";
+  return "";
+}
+function angOf(n){ return n?.pageno ?? n?.pageNo ?? n?.ang ?? n?.page ?? null; }
+
+// Walk a response and collect verse lines IN ORDER. Stops descending once a line is found.
+function collectLines(root, dedup){
+  const out=[]; const seen=new Set();
+  (function walk(n){
+    if(!n || typeof n!=="object") return;
+    if(Array.isArray(n)){ n.forEach(walk); return; }
+    const g=gurOf(n);
+    if(g){
+      if(!dedup || !seen.has(g)){ if(dedup) seen.add(g);
+        out.push({g, e:engOf(n), t:tranOf(n), ang:angOf(n), tr:{en:engOf(n), pa:punOf(n), hi:hinOf(n)}}); }
+      return;                       // don't descend into a recognised line (avoids dupes)
+    }
+    for(const k in n){ if(n[k] && typeof n[k]==="object") walk(n[k]); }
+  })(root);
+  return out;
+}
+
+// Phonetic skeleton: collapse sounds that vary between spoken Punjabi and scripture,
+// so ASR text matches Gurbani (ਹੋਵੈ≈ਹੋਵਈ, ਲਾਈ≈ਲਾਇ, ਉਤਰੇ≈ਉਤਰੀ, ਭੁਖਿਆ≈ਭੁਖ, ਸ਼≈ਸ, ਣ≈ਨ, ੜ≈ਰ).
+function phon(w){
+  let s=(w||"").replace(/\u0A3C/g,"")               // drop nukta
+    .replace(/ਣ/g,"ਨ").replace(/ੜ/g,"ਰ").replace(/ਞ/g,"ਨ").replace(/ਙ/g,"ਨ")
+    .replace(/[\u0A3E-\u0A4D\u0A70\u0A71\u0A02\u0A01\u0A03]/g,"") // strip vowel-signs/nasals/addak/virama
+    .replace(/[\u0A05-\u0A14]/g,"ਅ");                // independent vowels → one symbol
+  s=s.replace(/ਅ+/g,"ਅ").replace(/^ਅ|ਅ$/g,"");      // collapse & trim vowel marker
+  return s;
+}
+const phonWords = text => words(text).map(phon).filter(Boolean);
+
+// Ultra-common Gurbani words to ignore when scoring (computed as skeletons at load).
+const COMMON = ["ਹਰਿ","ਨਾਮੁ","ਨਾਮ","ਪ੍ਰਭ","ਪ੍ਰਭੁ","ਮੇਰਾ","ਮੇਰੇ","ਮੇਰੀ","ਕਾ","ਕੇ","ਕੀ","ਕਉ","ਹੈ","ਹੀ","ਹਉ",
+  "ਜੀਉ","ਜੀ","ਮਨ","ਮਨੁ","ਗੁਰ","ਗੁਰੁ","ਗੁਰੂ","ਰਾਮ","ਸਭ","ਸਭਿ","ਜੋ","ਸੋ","ਨ","ਨਾ","ਤੇ","ਨੋ","ਮੈ","ਤੂ","ਤੁਮ",
+  "ਕਰਿ","ਕਰਿਆ","ਹੋਇ","ਮਹਿ","ਸਿਉ","ਕਾਇ","ਜਨ","ਸੇ","ਇਹ"];
+const STOP = new Set(COMMON.map(phon));
+const wt = p => (STOP.has(p) ? 0 : Math.min(p.length, 4));   // distinctive (longer) words weigh more
+
+// Weighted phonetic overlap between query skeletons and a line's skeletons.
+function hitsP(qP, lineP){
+  const L=new Set(lineP); let s=0;
+  for(const q of qP) if(L.has(q)) s+=wt(q);
+  return s;
+}
+// Count of plain matches (for thresholds) ignoring weight.
+function rawHits(qP, lineP){ const L=new Set(lineP); let h=0; for(const q of qP) if(L.has(q)) h++; return h; }
+// Bigram bonus: consecutive query pair appearing consecutively in the line (very discriminative).
+function bigramBonus(qP, lineP){
+  let b=0;
+  for(let i=0;i<qP.length-1;i++){
+    for(let j=0;j<lineP.length-1;j++){
+      if(qP[i]===lineP[j] && qP[i+1]===lineP[j+1] && (wt(qP[i])||wt(qP[i+1]))) { b+=4; break; }
+    }
+  }
+  return b;
+}
+// Full line score used for ranking candidates.
+const scoreP = (qP, lineP) => hitsP(qP, lineP) + bigramBonus(qP, lineP);
+
+// Back-compat wrapper (raw gurmukhi line) used by follow logic.
+const hits = (qWords, lineG) => rawHits(qWords.map(phon).filter(Boolean), phonWords(lineG));
+
+/* ---------- API ---------- */
+async function getJSON(url){ const r=await fetch(url); if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); }
+const search = (q,type,n=40) => getJSON(`${SEARCH}${encodeURIComponent(q)}?source=G&searchtype=${type}&results=${n}`);
+// Find the "next shabad" id from a shabad response (Shabad OS navigation), whatever its shape.
+function navNext(o){
+  let r=null;
+  (function w(n){
+    if(r!=null || !n || typeof n!=="object") return;
+    if(n.navigation && n.navigation.next!=null){
+      const nx=n.navigation.next;
+      const v = (typeof nx==="object") ? (nx.id||nx.shabadid||nx.shabadId) : nx;
+      if(v && v!=="") { r=String(v); return; }
+    }
+    for(const k in n){ if(n[k]&&typeof n[k]==="object") w(n[k]); }
+  })(o);
+  return r;
+}
+// Fetch a shabad's lines (with phonetic skeletons) plus the id of the shabad that follows it.
+async function fetchShabad(id){
+  const json = await getJSON(`${SHABAD}${encodeURIComponent(id)}`);
+  const lines = collectLines(json, false);
+  lines.forEach(l => l.p = phonWords(l.g));
+  return { lines, nextId: navNext(json) };
+}
+const hasShabads = d => { const a=d&&(d.shabads||d.shabad); return Array.isArray(a)? a.length>0 : !!a; };
+
+/* ================= OFFLINE CORPUS (full Guru Granth Sahib on the phone) =================
+   First launch downloads all 1430 angs once (Gurmukhi + English + Punjabi + transliteration),
+   caches them in IndexedDB, and builds a local phonetic index. After that, matching and
+   translations are fully local, instant, and work with no signal. If the corpus isn't ready,
+   everything falls back to the online API — so this can never break the working app. */
+let CORPUS=null, INV=null, OFFLINE=false, winBase=0;
+const CORPUS_VER=1, TOTAL_ANGS=1430;
+
+function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open("gurbaniLive",1);
+  r.onupgradeneeded=()=>{ if(!r.result.objectStoreNames.contains("kv")) r.result.createObjectStore("kv"); };
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function idbGet(k){ const db=await idbOpen(); return new Promise((res,rej)=>{ const t=db.transaction("kv","readonly"); const q=t.objectStore("kv").get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function idbSet(k,v){ const db=await idbOpen(); return new Promise((res,rej)=>{ const t=db.transaction("kv","readwrite"); t.objectStore("kv").put(v,k); t.oncomplete=()=>res(true); t.onerror=()=>rej(t.error); }); }
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+// Download every ang, with limited concurrency + retries; reports progress 0..1.
+async function downloadCorpus(onProgress){
+  const byAng=new Array(TOTAL_ANGS+1); let done=0, next=1;
+  async function fetchAng(n){
+    for(let a=0;a<4;a++){
+      try{
+        const j=await getJSON(`${ANG}${n}`);
+        byAng[n]=collectLines(j,false).map(l=>({g:l.g, e:(l.tr&&l.tr.en)||l.e||"", pa:(l.tr&&l.tr.pa)||"", t:l.t||"", ang:l.ang||n}));
+        return;
+      }catch(e){ await sleep(500*(a+1)); }
+    }
+    byAng[n]=[];   // give up on this page rather than stall the whole download
+  }
+  async function worker(){ while(next<=TOTAL_ANGS){ const n=next++; await fetchAng(n); done++; if(onProgress) onProgress(done/TOTAL_ANGS); } }
+  await Promise.all(Array.from({length:6}, worker));
+  const corpus=[];
+  for(let n=1;n<=TOTAL_ANGS;n++){ if(byAng[n]&&byAng[n].length) for(const ln of byAng[n]) corpus.push(ln); }
+  return corpus;
+}
+
+// Build the in-memory phonetic inverted index from the corpus.
+function buildIndex(){
+  INV=new Map();
+  for(let i=0;i<CORPUS.length;i++){
+    const L=CORPUS[i]; L.p=phonWords(L.g);
+    const seen=new Set();
+    for(const sk of L.p){ if(wt(sk)>0 && !seen.has(sk)){ seen.add(sk); let a=INV.get(sk); if(!a){a=[];INV.set(sk,a);} a.push(i); } }
+  }
+  OFFLINE=true;
+}
+
+// Find the best-matching line in the whole corpus for the heard skeletons.
+function localBest(qP){
+  const cand=new Map();
+  for(const sk of qP){ if(wt(sk)<=0) continue; const a=INV.get(sk); if(a) for(const i of a) cand.set(i,(cand.get(i)||0)+1); }
+  let arr=[...cand.keys()];
+  if(arr.length>2000){ arr.sort((x,y)=>cand.get(y)-cand.get(x)); arr=arr.slice(0,2000); }
+  let best=null, second=null;
+  for(const i of arr){ const sc=scoreP(qP, CORPUS[i].p);
+    if(!best||sc>best.sc){ second=best; best={i,sc}; } else if(!second||sc>second.sc){ second={i,sc}; } }
+  return {best,second};
+}
+
+// Load a window of lines around a global index into the active `shabad` (so we don't render 60k rows).
+function loadWindow(gi){
+  winBase=Math.max(0, gi-3);
+  const end=Math.min(CORPUS.length, winBase+60);
+  shabad=[];
+  for(let i=winBase;i<end;i++){ const L=CORPUS[i]; shabad.push({g:L.g, e:L.e, t:L.t, ang:L.ang, p:L.p, tr:{en:L.e, pa:L.pa, hi:""}}); }
+  curShabadId="local"; nextId=null; loaded.clear();
+  renderShabad();
+}
+
+// Local equivalent of seek(): lock the shabad using the on-device index (no network).
+function localLock(qP){
+  const {best,second}=localBest(qP);
+  if(!best) return;
+  const margin=best.sc-(second?second.sc:0);
+  const firstLock=!shabad;
+  const confident = firstLock ? (best.sc>=5 && (margin>=2||!second)) : (best.sc>=9 && margin>=5);
+  if(!confident) return;
+  const gi=best.i;
+  if(shabad && curShabadId==="local" && gi>=winBase && gi<winBase+shabad.length){
+    setActive(gi-winBase); mode="following"; missStreak=0; return;   // already in window
+  }
+  loadWindow(gi);
+  setActive(gi-winBase);
+  mode="following"; missStreak=0;
+}
+
+// Prepare offline: use cache if present, else download once (background-safe, retry-safe).
+let dlBusy=false;
+async function initOffline(){
+  if(OFFLINE || dlBusy) return;
+  // APK build: the full scripture ships inside the app (corpus.json) — no download, no internet.
+  dlBusy=true;
+  try{
+    const el=$("offline"); if(el){ el.classList.remove("hidden"); el.className="offline-badge"; el.textContent="Loading scripture…"; }
+    const r=await fetch("corpus.json");
+    if(r.ok){
+      const c=await r.json();
+      if(Array.isArray(c) && c.length>10000){ CORPUS=c; buildIndex(); setOfflineBadge("ready"); $("dlBtn").classList.add("hidden"); dlBusy=false; return; }
+    }
+  }catch(e){}
+  dlBusy=false; setOfflineBadge("hide");
+  try{
+    const meta=await idbGet("meta");
+    if(meta && meta.v===CORPUS_VER && meta.complete){
+      const c=await idbGet("corpus");
+      if(c && c.length){ CORPUS=c; buildIndex(); setOfflineBadge("ready"); return; }
+    }
+  }catch(e){ setOfflineBadge("hide"); return; }   // IndexedDB unavailable → stay online
+  dlBusy=true;
+  try{
+    setOfflineBadge("dl",0);
+    const c=await downloadCorpus(f=>setOfflineBadge("dl", Math.round(f*100)));
+    if(c && c.length>10000){
+      CORPUS=c; buildIndex();
+      try{ await idbSet("corpus",c); await idbSet("meta",{v:CORPUS_VER,complete:true,count:c.length}); }catch(_){}
+      setOfflineBadge("ready");
+    } else { setOfflineBadge("hide"); }
+  }catch(e){ setOfflineBadge("hide"); }
+  finally{ dlBusy=false; }
+}
+function setOfflineBadge(state, pct){
+  const el=$("offline"), btn=$("dlBtn");
+  if(state==="ready"){
+    if(el){ el.textContent="◆ Offline ready"; el.className="offline-badge ready"; setTimeout(()=>el.classList.add("hidden"),4000); }
+    if(btn){ btn.innerHTML="◆ Saved offline"; btn.classList.add("done"); btn.disabled=true; }
+  } else if(state==="dl"){
+    if(el){ el.classList.remove("hidden"); el.className="offline-badge"; el.textContent="Saving scripture offline… "+(pct||0)+"%"; }
+    if(btn){ btn.textContent="Saving… "+(pct||0)+"%"; btn.disabled=true; }
+  } else {
+    if(el) el.classList.add("hidden");
+    if(btn){ btn.innerHTML="&#11015; Save scripture offline"; btn.disabled=false; }
+  }
+}
+
+function shabadIdOf(node){
+  // The real field is "shabadid" and it is ALPHANUMERIC (e.g. "02L", "6JN").
+  let id=null;
+  (function w(o){
+    if(id!=null || !o || typeof o!=="object") return;
+    if(o.shabadid!=null && (typeof o.shabadid==="string" || typeof o.shabadid==="number")){ id=String(o.shabadid); return; }
+    for(const k in o){ if(o[k] && typeof o[k]==="object") w(o[k]); }
+  })(node);
+  return id;
+}
+function pickShabad(data, qP){
+  const a=(data&&(data.shabads||data.shabad))||[];
+  const list=Array.isArray(a)?a:[a];
+  const scored=[];
+  for(const item of list){
+    const node=item.shabad||item.Shabad||item;
+    const id=shabadIdOf(node);
+    let bestLine=null, bestSc=-1;
+    for(const ln of collectLines(node,false)){
+      const sc=scoreP(qP, phonWords(ln.g));
+      if(sc>bestSc){ bestSc=sc; bestLine=ln; }
+    }
+    if(bestLine) scored.push({id, line:bestLine, sc:bestSc});
+  }
+  scored.sort((x,y)=> y.sc - x.sc);
+  return { best:scored[0]||null, second:scored[1]||null };
+}
+const bestIndex = (qP, lines) => { let bi=0,bh=-1; for(let i=0;i<lines.length;i++){ const h=scoreP(qP, lines[i].p||phonWords(lines[i].g)); if(h>bh){bh=h;bi=i;} } return bi; };
+
+/* ---------- State ---------- */
+let shabad=null, curShabadId=null, curIdx=-1, actIdx=-1, mode="idle", missStreak=0, pendingId=null;
+let committed=[], listenStart=0;                 // persistent words heard this session
+let appMode="self", emphasis="gurbani";          // "self" | "gurdwara" ; "gurbani" | "translation"
+let ttsLang="off", speaking=false, awaitTTS=false, lineCover=new Set();
+const TTS_LOCALE={en:"en-IN", pa:"pa-IN", hi:"hi-IN"};
+const lead = () => appMode==="gurdwara" ? 1 : 0;  // gurdwara reads ahead; self & kirtan show the current line
+const selfPaced = () => appMode==="self" && ttsLang!=="off";
+const SEEK_WIN=8;      // words used to identify the shabad
+const SEEK_MIN=4;      // start trying after a few clear words
+const FOLLOW_WIN=4;    // SHORT leading-edge window so the line you're saying NOW wins quickly
+const LOST_LIMIT=6;    // forward misses before considering a new shabad
+let hardErr=false;
+let recog=null, listening=false, lastTail="", lastFire=0, pumpBusy=false;
+let lastSync=0, lastHeard=0, autoSteps=0, autoTimer=null;   // auto-advance bookkeeping
+let nextId=null, extending=false; const loaded=new Set();   // continuous forward flow
+const ADV_MIN=3;         // a forward line must score at least this to win
+const ADV_MARGIN=3;      // …and beat the current line by at least this much before we move
+const setStatus = t => { const el=$("seekmsg"); if(el) el.textContent=t; };
+const showWarn  = h => { const w=$("warn"); w.innerHTML=h; w.classList.remove("hidden"); };
+
+/* ---------- Lyrics rendering ---------- */
+function renderShabad(){
+  $("lyrics").innerHTML = shabad.map((ln,i)=>`<div class="lrow" data-i="${i}"><div class="lg">${esc(ln.g)}</div></div>`).join("");
+  curIdx=-1; actIdx=-1;
+}
+function deactivate(row){
+  if(!row) return;
+  row.classList.remove("active");
+  const lg=row.querySelector(".lg"); if(lg) lg.textContent=shabad[+row.dataset.i].g;
+  row.querySelectorAll(".lt,.le").forEach(n=>n.remove());
+}
+// idx = the DETECTED voice line. In gurdwara mode we show the next line (read-ahead);
+// in self-reading we show the line itself so you read it and the words light up.
+function setActive(idx){
+  if(!shabad || idx<0 || idx>=shabad.length) return;
+  curIdx=idx;
+  const disp=Math.min(idx+lead(), shabad.length-1);
+  const rows=$("lyrics").children;
+  if(actIdx>=0 && actIdx!==disp && rows[actIdx]) deactivate(rows[actIdx]);
+  for(const r of rows) r.classList.remove("prev");          // clear old previous-line marks
+  actIdx=disp;
+  // when reading ahead (gurdwara), keep the line actually being recited readable below the lead
+  if(lead()>0 && rows[disp-1]) rows[disp-1].classList.add("prev");
+  const row=rows[disp]; if(!row) return;
+  row.classList.add("active");
+  row.classList.toggle("emph-tr", emphasis==="translation");   // gurdwara: emphasise translation
+  const ln=shabad[disp];
+  row.querySelector(".lg").innerHTML =
+    ln.g.split(/\s+/).filter(Boolean).map(w=>`<span class="w">${esc(w)}</span>`).join(" ");
+  if(!row.querySelector(".lt") && ln.t){ const d=document.createElement("div"); d.className="lt"; d.textContent=ln.t; row.appendChild(d); }
+  if(!row.querySelector(".le") && ln.e){ const d=document.createElement("div"); d.className="le"; d.textContent=ln.e; row.appendChild(d); }
+  $("ang").textContent = ln.ang ? `Ang ${ln.ang} · ਅੰਗ ${ln.ang}` : "";
+  row.scrollIntoView({block:"center", behavior:"smooth"});
+  // reset reading-coverage for the line now being recited (curIdx)
+  lineCover=new Set();
+  lineDist(idx);
+  lastSync=Date.now();
+}
+// Speak a line's translation, then run cb() when done (used by self-reading pacing).
+function speakThen(idx, cb){
+  const ln=shabad[idx], tr=(ln&&ln.tr)||{};
+  let text = tr[ttsLang] || (ttsLang==="hi" ? (tr.pa||tr.en) : tr.en) || "";
+  if(!text || !("speechSynthesis" in window)){ setTimeout(cb, 300); return; }
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang=TTS_LOCALE[ttsLang]||"en-IN"; u.rate=0.95;
+    u.onstart=()=>{ speaking=true; };
+    u.onend=()=>{ speaking=false; cb(); };
+    u.onerror=()=>{ speaking=false; cb(); };
+    speechSynthesis.speak(u);
+  }catch(e){ speaking=false; setTimeout(cb, 300); }
+}
+// Distinctive (rare) word skeletons of a line, in order — used to tell when a line is finished.
+function lineDist(i){
+  const ln=shabad[i]; if(!ln) return [];
+  if(!ln._distArr){ ln._distArr=(ln.p||phonWords(ln.g)).filter(p=>wt(p)>0); ln._dist=new Set(ln._distArr); }
+  return ln._distArr;
+}
+// How much of the line being recited (curIdx) has been heard.
+function coverFrac(){
+  if(curIdx<0) return 0;
+  const d=lineDist(curIdx); return d.length===0 ? 1 : lineCover.size/d.length;
+}
+function coverActive(all){
+  if(curIdx<0) return;
+  const d=lineDist(curIdx); if(!d.length) return;
+  const set=shabad[curIdx]._dist;
+  for(const w of all.slice(-6)){ const p=phon(w); if(set.has(p)) lineCover.add(p); }
+}
+// Has the LAST distinctive word of the current line been recited? (strong "line finished" signal)
+function lastWordHeard(){
+  if(curIdx<0) return false;
+  const d=lineDist(curIdx); if(!d.length) return false;
+  return lineCover.has(d[d.length-1]);
+}
+// Self-reading: line is read → speak its meaning → then advance to the next line.
+function speakMeaningThenAdvance(){
+  if(awaitTTS) return;
+  awaitTTS=true;
+  speakThen(actIdx, ()=>{
+    awaitTTS=false;
+    if(curIdx < shabad.length-1) setActive(curIdx+1);
+    else extendForward().then(()=>{ if(curIdx<shabad.length-1) setActive(curIdx+1); });
+  });
+}
+// Top up lines near the end; otherwise the line only moves when the voice actually MATCHES.
+function autoAdvance(){
+  if(!listening || mode!=="following" || !shabad) return;
+  if(curIdx>=shabad.length-2) extendForward();      // top up lines before we run out
+
+  if(selfPaced()){                                   // SELF-READING: read line → speak meaning → next
+    if(awaitTTS || actIdx<0) return;
+    const f=coverFrac(), now=Date.now();
+    if(f>=0.8 || (f>=0.45 && now-lastHeard>1000)) speakMeaningThenAdvance();
+    return;
+  }
+  // Gurdwara & Kirtan: NO automatic stepping. The line advances only when the heard
+  // words match the next line (handled by follow()/locate() in onHeard).
+}
+// Keep the scripture flowing: append the NEXT shabad so lines never run out (1430 angs).
+function appendRows(from){
+  let html="";
+  for(let i=from;i<shabad.length;i++) html+=`<div class="lrow" data-i="${i}"><div class="lg">${esc(shabad[i].g)}</div></div>`;
+  $("lyrics").insertAdjacentHTML("beforeend", html);
+}
+async function extendForward(){
+  if(OFFLINE && CORPUS && curShabadId==="local"){     // local continuous flow — no network
+    if(extending) return; extending=true;
+    const globalEnd=winBase+shabad.length;
+    if(globalEnd<CORPUS.length){
+      const from=shabad.length, end=Math.min(CORPUS.length, globalEnd+40);
+      for(let i=globalEnd;i<end;i++){ const L=CORPUS[i]; shabad.push({g:L.g,e:L.e,t:L.t,ang:L.ang,p:L.p,tr:{en:L.e,pa:L.pa,hi:""}}); }
+      appendRows(from);
+    }
+    extending=false; return;
+  }
+  if(extending || !nextId || loaded.has(nextId) || !shabad) return;
+  extending=true;
+  const id=nextId;
+  try{
+    const { lines, nextId:nn } = await fetchShabad(id);
+    if(lines && lines.length){
+      const prevAng = shabad.length ? shabad[shabad.length-1].ang : null;
+      lines.forEach(l => { if(l.ang==null) l.ang=prevAng; });
+      const from=shabad.length;
+      shabad = shabad.concat(lines);
+      appendRows(from);
+      loaded.add(id);
+      nextId = nn;                 // queue the one after, for the next extension
+    } else { nextId=null; }
+  }catch(e){ /* keep nextId; will retry */ }
+  finally{ extending=false; }
+}
+function highlight(heardSet){
+  if(actIdx<0) return;
+  const row=$("lyrics").children[actIdx]; if(!row) return;
+  row.querySelectorAll(".lg .w").forEach(s=>{ const p=phon(clean(s.textContent)); if(p && heardSet.has(p)) s.classList.add("on"); });
+}
+
+/* ---------- Follow / seek controller ---------- */
+// FORWARD-ONLY follow: oral recitation moves line→line in order, so once locked we only
+// advance (or stay), never jump backward. This stops the "jumping to other lines" problem.
+function follow(qP){
+  const start = curIdx<0?0:curIdx;
+  const end = Math.min(start+4, shabad.length-1);
+  const curSc = curIdx<0 ? 0 : scoreP(qP, shabad[curIdx].p);
+  let bestIdx=start, bestSc=curIdx<0 ? -1 : curSc;
+  for(let i=start+1;i<=end;i++){
+    const sc=scoreP(qP, shabad[i].p);
+    if(sc>bestSc){ bestSc=sc; bestIdx=i; }      // best-scoring line ahead
+  }
+  // Only advance when a forward line CLEARLY beats the line we're on (sticky — avoids early jumps).
+  if(bestIdx>curIdx && bestSc>=ADV_MIN && (bestSc-curSc)>=ADV_MARGIN){
+    setActive(bestIdx);
+    if(curIdx>=shabad.length-3) extendForward();
+    return true;
+  }
+  if(curSc>=1){ if(curIdx>=shabad.length-3) extendForward(); return true; }  // still on this line
+  return bestSc>=ADV_MIN ? (setActive(bestIdx),true) : false;                // truly lost → let it re-grip
+}
+// KIRTAN: the ragi repeats lines and returns to the rahao, so allow jumping BACK as well.
+function locate(qP){
+  let best=0, bi=curIdx<0?0:curIdx;
+  for(let i=0;i<shabad.length;i++){
+    const s=scoreP(qP, shabad[i].p);
+    if(s>best){ best=s; bi=i; }
+    else if(s===best && best>0 && curIdx>=0 && Math.abs(i-curIdx)<Math.abs(bi-curIdx)){ bi=i; }
+  }
+  if(best<2) return false;
+  const cur = curIdx>=0 ? scoreP(qP, shabad[curIdx].p) : 0;
+  if(curIdx>=0 && cur>=best) return true;        // current line still as good → stay (anti-flicker)
+  setActive(bi);                                 // jump to wherever they are — forward or back
+  if(curIdx>=shabad.length-3) extendForward();
+  return true;
+}
+async function seek(recent){
+  const qP=recent.map(phon).filter(Boolean);
+  if(qP.length<2) return;
+  if(OFFLINE){ localLock(qP); return; }          // instant on-device matching, no network
+  let data=null;
+  try{ data=await search(recent.join(" "),6); }
+  catch(e){ return; }
+  if(!hasShabads(data)) return;
+  const {best, second} = pickShabad(data, qP);
+  if(!best) return;
+  const margin = best.sc - (second ? second.sc : 0);
+  const firstLock = !curShabadId;
+  // Lock fast on first find; be strict before SWITCHING shabads mid-recitation.
+  const confident = firstLock
+    ? (best.sc>=5 && (margin>=2 || !second))
+    : (best.sc>=9 && margin>=5);
+  if(!confident){ pendingId=null; return; }
+  if(best.id && best.id===curShabadId){ mode="following"; missStreak=0; return; } // already here
+  if(!firstLock && best.id && best.id!==pendingId){ pendingId=best.id; return; }   // two-read confirm to switch
+  pendingId=null;
+  let lines=null, nn=null;
+  if(best.id){ try{ const r=await fetchShabad(best.id); lines=r.lines; nn=r.nextId; }catch(e){ lines=null; } }
+  if(!lines || !lines.length){ lines=[best.line]; lines.forEach(l=>l.p=phonWords(l.g)); }
+  lines.forEach(l => { if(l.ang==null) l.ang=best.line.ang; });
+  shabad=lines; curShabadId=best.id||null;
+  nextId=nn; loaded.clear(); if(best.id) loaded.add(best.id);   // reset forward-flow chain
+  renderShabad();
+  setActive(bestIndex(qP, lines));
+  mode="following"; missStreak=0;
+}
+async function onHeard(all){
+  if(shabad) highlight(new Set(all.slice(-12).map(phon)));
+  const now=Date.now();
+
+  if(mode==="following" && shabad){
+    // SELF-READING with spoken meaning: just track how much of the line you've read.
+    // Advancing is handled by the pacing timer (read → speak meaning → next line).
+    if(selfPaced()){
+      if(awaitTTS) return;            // paused while the meaning is spoken
+      coverActive(all);
+      return;
+    }
+    // CONTINUOUS following (gurdwara, or self-reading with meaning Off)
+    coverActive(all);                  // track how much of the current line has been recited
+    const tail=all.slice(-FOLLOW_WIN);
+    const key="F"+tail.join(" ");
+    if(key===lastTail || pumpBusy || now-lastFire<280) return;
+    lastFire=now; lastTail=key; pumpBusy=true;
+    try{
+      const qp=tail.map(phon).filter(Boolean);
+      const ok = appMode==="kirtan" ? locate(qp) : follow(qp);
+      if(ok){ missStreak=0; autoSteps=0; lastSync=Date.now(); }
+      else { missStreak++; if(missStreak>=LOST_LIMIT) await seek(all.slice(-SEEK_WIN)); }
+    } finally { pumpBusy=false; }
+    return;
+  }
+
+  // SEEKING: identify the shabad from a few recent words (phonetic + confidence-gated).
+  if(all.length < SEEK_MIN){ setStatus("Listening…  ਸੁਣ ਰਿਹਾ ਹੈ"); return; }
+  const q=all.slice(-SEEK_WIN);
+  const key="S"+q.join(" ");
+  if(key===lastTail || pumpBusy || now-lastFire<550) return;
+  lastFire=now; lastTail=key; pumpBusy=true;
+  setStatus("Finding shabad…  ਸ਼ਬਦ ਲੱਭ ਰਿਹਾ");
+  try{ await seek(q); } finally { pumpBusy=false; }
+}
+
+/* ---------- Speech recognition ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function startRecog(){
+  if(!SR){ showWarn("Live listening needs <b>Chrome on Android</b>. (iPhone Safari can't do speech-to-text here.)"); return; }
+  recog=new SR(); recog.lang="pa-IN"; recog.continuous=true; recog.interimResults=true; recog.maxAlternatives=1;
+  recog.onresult=e=>{
+    lastHeard=Date.now();                 // speech is actively arriving
+    if(hardErr===false && !$("warn").classList.contains("hidden")) $("warn").classList.add("hidden");
+    let interim="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal && !speaking) committed=committed.concat(words(r[0].transcript)); // don't store TTS audio
+      else if(!r.isFinal) interim+=r[0].transcript+" ";
+    }
+    if(committed.length>200) committed=committed.slice(-200);
+    const all=committed.concat(words(interim));
+    if(all.length){ $("heard").innerHTML="ਸੁਣ ਰਿਹਾ ਹੈ: <b>"+esc(all.slice(-12).join(" "))+"</b>"; onHeard(all); }
+  };
+  recog.onerror=e=>{
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){ showWarn("Microphone blocked. Allow mic access for this site, then tap ੴ again."); stopRecog(); }
+    else if(e.error==="no-speech"){ /* will auto-restart */ }
+    else if(e.error==="network"||e.error==="language-not-supported"){
+      hardErr=true;
+      showWarn("Listening needs <b>internet</b>, or the <b>Punjabi offline speech pack</b> installed on this phone. Scripture itself is already offline.");
+    }
+    else { setStatus("Mic: "+e.error); }
+  };
+  recog.onend=()=>{
+    if(!listening) return;
+    const wait=hardErr?2500:0; hardErr=false;
+    setTimeout(()=>{ if(listening){ try{ recog.start(); }catch(_){} } }, wait);
+  };
+  try{
+    recog.start(); listening=true; mode="seeking"; committed=[]; listenStart=Date.now();
+    shabad=null; curShabadId=null; curIdx=-1; actIdx=-1; pendingId=null; lastTail="";
+    lastSync=0; lastHeard=0; autoSteps=0; nextId=null; extending=false; loaded.clear();
+    awaitTTS=false; lineCover=new Set();
+    clearInterval(autoTimer); autoTimer=setInterval(autoAdvance, 900);
+    acquireWake();                              // keep the screen on while listening
+    $("lyrics").innerHTML='<div id="seekmsg" class="idle-hint"></div>';
+    $("start").classList.add("gone");          // big orb fades away
+    $("stop").classList.remove("hidden");      // small listening dot appears
+    setStatus("Listening…  ਸੁਣ ਰਿਹਾ ਹੈ");
+  }
+  catch(e){ setStatus("Could not start mic."); }
+}
+function stopRecog(){
+  listening=false; mode="idle"; committed=[]; speaking=false;
+  if("speechSynthesis" in window) try{ speechSynthesis.cancel(); }catch(_){}
+  clearInterval(autoTimer); autoTimer=null;
+  $("start").classList.remove("gone");         // bring back the orb
+  $("stop").classList.add("hidden");
+  $("heard").textContent="";
+  if(recog){ try{ recog.stop(); }catch(_){} }
+  releaseWake();                                // let the screen sleep again
+}
+// Screen Wake Lock — stops the phone dimming/locking during recitation.
+let wakeLock=null;
+async function acquireWake(){
+  try{ if("wakeLock" in navigator){ wakeLock=await navigator.wakeLock.request("screen"); } }catch(e){}
+}
+function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
+document.addEventListener("visibilitychange", ()=>{   // re-acquire after returning to the app
+  if(document.visibilityState==="visible" && listening && !wakeLock) acquireWake();
+});
+$("startBtn").addEventListener("click", startRecog);
+$("stop").addEventListener("click", stopRecog);
+document.querySelectorAll(".mode-opt").forEach(b=>b.addEventListener("click", ()=>{
+  appMode=b.dataset.mode;
+  document.querySelectorAll(".mode-opt").forEach(x=>x.classList.toggle("sel", x===b));
+  $("selfOpts").classList.toggle("hidden", appMode!=="self");
+  $("gurOpts").classList.toggle("hidden", appMode==="self");   // emphasis applies to gurdwara + kirtan
+}));
+document.querySelectorAll(".tts-opt").forEach(b=>b.addEventListener("click", ()=>{
+  ttsLang=b.dataset.tts;
+  document.querySelectorAll(".tts-opt").forEach(x=>x.classList.toggle("sel", x===b));
+  if(ttsLang==="off" && "speechSynthesis" in window) try{ speechSynthesis.cancel(); }catch(_){}
+}));
+document.querySelectorAll(".emph-opt").forEach(b=>b.addEventListener("click", ()=>{
+  emphasis=b.dataset.emph;
+  document.querySelectorAll(".emph-opt").forEach(x=>x.classList.toggle("sel", x===b));
+}));
+$("dlBtn").addEventListener("click", ()=>{ if(!OFFLINE && !dlBusy) initOffline(); });
+
+/* ---------- PWA: manifest + service worker + install ---------- */
+const ICON = document.querySelector('link[rel="apple-touch-icon"]').getAttribute("href");
+(function(){
+  const manifest={ name:"Gurbani Live", short_name:"Gurbani",
+    description:"Listen to Gurbani and follow the lines of Sri Guru Granth Sahib with English translation.",
+    start_url:".", scope:".", display:"standalone", orientation:"any",
+    background_color:"#3d0f0f", theme_color:"#5a1a1a", lang:"pa", dir:"ltr",
+    icons:[ {src:ICON,sizes:"512x512",type:"image/svg+xml",purpose:"any"},
+            {src:ICON,sizes:"192x192",type:"image/svg+xml",purpose:"any"},
+            {src:ICON,sizes:"512x512",type:"image/svg+xml",purpose:"maskable"} ] };
+  const blob=new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"});
+  const link=document.createElement("link"); link.rel="manifest"; link.href=URL.createObjectURL(blob);
+  document.head.appendChild(link);
+})();
+if("serviceWorker" in navigator && location.protocol==="https:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+let deferredPrompt=null;
+window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); deferredPrompt=e; $("install").classList.remove("hidden"); });
+$("install").addEventListener("click", async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $("install").classList.add("hidden"); });
+window.addEventListener("appinstalled", ()=> $("install").classList.add("hidden"));
+
+/* ---------- APK: prompts for the phone's offline packs (Punjabi listening, Punjabi + English voices) ---------- */
+const SETUP_LABEL={sr:"Punjabi listening", pa:"Punjabi voice", en:"English voice"};
+window.__gvSetup=function(st){
+  const box=$("setup"), opts=$("setupOpts"), note=$("setupNote"); if(!box||!st) return;
+  opts.innerHTML=""; const notes=[];
+  for(const k of ["sr","pa","en"]){
+    const v=st[k]; if(!v) continue;
+    const b=document.createElement("button"); b.className="set-opt";
+    if(v==="ready"){ b.textContent="\u2713 "+SETUP_LABEL[k]; b.classList.add("ok"); b.disabled=true; }
+    else if(v==="unsupported"){
+      b.textContent="\u2715 "+SETUP_LABEL[k]; b.classList.add("no"); b.disabled=true;
+      notes.push(k==="sr" ? "This phone offers no Punjabi offline speech pack — listening will need internet."
+                          : SETUP_LABEL[k]+" is not offered by this phone's speech engine.");
+    }
+    else {
+      b.textContent="\u2B07 "+SETUP_LABEL[k];
+      b.addEventListener("click", ()=>{
+        try{ AndroidSetup.get(k); }catch(_){}
+        setTimeout(()=>{ try{ AndroidSetup.check(); }catch(_){} }, 8000);
+        setTimeout(()=>{ try{ AndroidSetup.check(); }catch(_){} }, 30000);
+      });
+      if(k==="sr" && v==="unknown") notes.push("Punjabi listening: tap to open speech settings, then add ਪੰਜਾਬੀ under offline speech recognition.");
+      else notes.push("Tap \u2B07 once while online to download "+SETUP_LABEL[k].toLowerCase()+".");
+    }
+    opts.appendChild(b);
+  }
+  note.textContent=notes.join(" ");
+  box.classList.remove("hidden");
+};
+if(window.AndroidSetup){
+  try{ AndroidSetup.check(); }catch(_){}
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ try{ AndroidSetup.check(); }catch(_){} } });
+}
+
+/* ---------- Startup ---------- */
+if(!standalone && location.protocol!=="https:" && location.hostname!=="localhost" && location.protocol!=="file:"){
+  showWarn("Open this on an <b>https://</b> address (e.g. Netlify) so the microphone works.");
+}
+if(!SR){ showWarn("Live listening needs <b>Chrome on Android</b>."); }
+// Prepare the on-device scripture (download once, then fully offline). Online still works meanwhile.
+if(location.protocol==="https:" || location.protocol==="file:"){ try{ initOffline(); }catch(e){} }
+</script>
+</body>
+</html>
