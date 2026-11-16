@@ -119,7 +119,7 @@
   .tts-opt.sel, .emph-opt.sel, .mode-opt.sel{ background:rgba(231,184,95,.9); color:#3d0f0f; border-color:transparent; font-weight:600;}
   .set-opt{ border:1px solid rgba(231,184,95,.4); background:transparent; color:var(--cream-dim);
     border-radius:18px; padding:6px 14px; cursor:pointer; font-family:'Cormorant Garamond',serif; font-size:14px;}
-  .set-opt.ok{ color:var(--gold); border-color:rgba(231,184,95,.8); background:rgba(231,184,95,.12); cursor:default;}
+  .set-opt.ok{ color:var(--gold); border-color:rgba(231,184,95,.8); background:rgba(231,184,95,.12);}
   .set-opt.no{ opacity:.5; cursor:default;}
   .set-note{ font-family:'Cormorant Garamond',serif; font-size:13px; color:var(--cream-dim); opacity:.8;
     max-width:320px; text-align:center; line-height:1.4;}
@@ -178,6 +178,13 @@
       <div class="opts">
         <button class="emph-opt sel" data-emph="gurbani">Gurbani</button>
         <button class="emph-opt" data-emph="translation">Translation</button>
+      </div>
+    </div>
+    <div id="engRow" class="sub-row hidden">
+      <span class="tts-cap">Listening</span>
+      <div class="opts">
+        <button class="set-opt" data-eng="local">In-app · offline</button>
+        <button class="set-opt" data-eng="google">Google · online</button>
       </div>
     </div>
     <div id="setup" class="sub-row hidden">
@@ -916,6 +923,17 @@ window.__gvSetup=function(st){
   note.textContent=notes.join(" ");
   box.classList.remove("hidden");
 };
+// APK: choose between the speech engine built into the app (offline) and the phone's Google recognizer.
+if(window.AndroidSpeech && AndroidSpeech.hasLocal && AndroidSpeech.hasLocal()){
+  const row=$("engRow"); row.classList.remove("hidden");
+  const paint=()=>{ const e=AndroidSpeech.getEngine(); row.querySelectorAll("[data-eng]").forEach(b=>b.classList.toggle("ok", b.dataset.eng===e)); };
+  row.querySelectorAll("[data-eng]").forEach(b=>b.addEventListener("click", ()=>{
+    if(listening) return;
+    AndroidSpeech.setEngine(b.dataset.eng);
+    setTimeout(()=>{ paint(); try{ AndroidSetup.check(); }catch(_){} }, 200);
+  }));
+  paint();
+}
 if(window.AndroidSetup){
   try{ AndroidSetup.check(); }catch(_){}
   document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ try{ AndroidSetup.check(); }catch(_){} } });

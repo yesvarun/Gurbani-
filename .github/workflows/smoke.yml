@@ -1,0 +1,88 @@
+name: Emulator check
+
+# Optional check: boots the app in an Android emulator and verifies it starts,
+# loads the bundled scripture and that the built-in speech engine works.
+on:
+  workflow_dispatch:
+  push:
+    branches: [probe]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore scripture cache
+        uses: actions/cache@v4
+        with:
+          path: src/main/assets/corpus.json
+          key: corpus-v1
+
+      - name: Download scripture
+        run: |
+          if [ ! -s src/main/assets/corpus.json ]; then
+            node scripts/fetch-corpus.mjs
+          fi
+
+      - name: Download fonts
+        run: node scripts/fetch-fonts.mjs
+
+      - name: Restore speech engine cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            libs
+            src/main/assets/asr
+          key: asr-v1
+
+      - name: Download speech engine
+        run: bash scripts/fetch-asr.sh
+
+      - name: Make a test clip
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng ffmpeg >/dev/null
+          espeak-ng -v pa -s 130 -w /tmp/e.wav "ਸੋਚੈ ਸੋਚਿ ਨ ਹੋਵਈ ਜੇ ਸੋਚੀ ਲਖ ਵਾਰ"
+          ffmpeg -loglevel error -y -i /tmp/e.wav -ar 16000 -ac 1 -c:a pcm_s16le -bitexact -map_metadata -1 /tmp/selftest.wav
+          ls -l /tmp/selftest.wav
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build test APK (with emulator libraries and test clip)
+        env:
+          APP_ABIS: x86_64,arm64-v8a
+        run: |
+          cp /tmp/selftest.wav src/main/assets/asr/selftest.wav
+          gradle assembleDebug --no-daemon --stacktrace
+          rm -f src/main/assets/asr/selftest.wav
+          ls -lh build/outputs/apk/debug/
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run in emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          ram-size: 4096M
+          disk-size: 6000M
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: bash scripts/ci-smoke.sh

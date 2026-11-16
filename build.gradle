@@ -12,6 +12,16 @@ android {
         targetSdk 34
         versionCode((System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int)
         versionName '1.0.' + (System.getenv('GITHUB_RUN_NUMBER') ?: '0')
+
+        // Native speech library: phones are arm64. (APP_ABIS is only overridden by the emulator check.)
+        ndk {
+            abiFilters((System.getenv('APP_ABIS') ?: 'arm64-v8a').split(','))
+        }
+    }
+
+    // Speech model files are loaded straight from the APK, so keep them uncompressed.
+    androidResources {
+        noCompress 'onnx'
     }
 
     compileOptions {
@@ -27,4 +37,7 @@ android {
 
 dependencies {
     implementation 'androidx.webkit:webkit:1.11.0'
+    // Built-in Punjabi speech recognition (downloaded by scripts/fetch-asr.sh at build time)
+    implementation files('libs/sherpa-onnx.aar')
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.0.21'
 }
