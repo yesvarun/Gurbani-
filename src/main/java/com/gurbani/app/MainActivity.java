@@ -66,6 +66,7 @@ public class MainActivity extends Activity {
     private static final int REQ_MIC = 1;
 
     private WebView web;
+    private View rootView;
     private WebViewAssetLoader assetLoader;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -118,7 +119,8 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         // Newer Android draws apps behind the status and navigation bars. Keep the page clear of
         // them by padding a maroon frame around the web view.
-        FrameLayout root = new FrameLayout(this);
+        final FrameLayout root = new FrameLayout(this);
+        rootView = root;
         root.setBackgroundColor(0xFF4B1515);
         root.addView(web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -237,6 +239,11 @@ public class MainActivity extends Activity {
                             @Override
                             public void onReceiveValue(String v) {
                                 Log.i("GurbaniSelfTest", "PAGE " + v);
+                                if (rootView != null) {
+                                    Log.i("GurbaniSelfTest", "INSETS top=" + rootView.getPaddingTop()
+                                            + " bottom=" + rootView.getPaddingBottom()
+                                            + " rootH=" + rootView.getHeight() + " webH=" + web.getHeight());
+                                }
                             }
                         });
             }
