@@ -208,6 +208,7 @@
     <button id="manageSub" class="sub-link hidden">Manage subscription</button>
     <button id="install" class="install-pill hidden">&#11015; Install app</button>
     <div class="credit">ਐਪ ਨਿਰਮਾਤਾ : ਦਾਸ ਵਰੁਣ ਦੁੱਗਲ</div>
+    <button id="privacyLink" class="sub-link">Privacy policy</button>
   </div>
 
   <!-- free-time countdown for non-subscribers -->
@@ -222,6 +223,7 @@
     <p id="pwTerms" class="pw-small"></p>
     <button id="pwRestore" class="sub-link">Already subscribed? Restore</button>
     <button id="pwClose" class="sub-link">Not now</button>
+    <button id="pwPrivacy" class="sub-link">Privacy policy</button>
   </div>
 
   <!-- listening indicator (tap to stop) -->
@@ -1029,6 +1031,10 @@ if(hasBilling()){
     if(left<=0){ stopRecog(); el.classList.add("hidden"); paintSub(); showPaywall("limit"); }
   }, 1000);
 }
+
+/* ---------- Privacy policy link (required inside the app by Google Play) ---------- */
+const PRIVACY_URL="https://github.com/yesvarun/Gurbani-/blob/main/PRIVACY.md";
+["privacyLink","pwPrivacy"].forEach(id=>{ const b=$(id); if(b) b.addEventListener("click", ()=>{ location.href=PRIVACY_URL; }); });
 
 /* ---------- Startup ---------- */
 if(!standalone && location.protocol!=="https:" && location.hostname!=="localhost" && location.protocol!=="file:"){
